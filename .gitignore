@@ -1,36 +1,33 @@
-# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
-
-# dependencies
+# Ignore node_modules (dependencies)
 node_modules/
 
-# Expo
+# Ignore Expo's .expo folder (contains build cache)
 .expo/
+.expo-shared/
+
+# Ignore build artifacts
 dist/
-web-build/
-expo-env.d.ts
+build/
 
-# Native
-*.orig.*
-*.jks
-*.p8
-*.p12
-*.key
-*.mobileprovision
+# Ignore Metro bundler cache
+.cache/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+package-lock.json
 
-# Metro
-.metro-health-check*
+# Ignore iOS and Android build folders (for native builds)
+ios/
+android/
 
-# debug
-npm-debug.*
-yarn-debug.*
-yarn-error.*
+# Ignore environment variables (API keys, secrets)
+.env
+.env.local
+.env.production
+.env.staging
 
-# macOS
+# Ignore IDE & OS-specific files
 .DS_Store
-*.pem
-
-# local env files
-.env*.local
-
-# typescript
-*.tsbuildinfo
+Thumbs.db
+.vscode/
+.idea/
