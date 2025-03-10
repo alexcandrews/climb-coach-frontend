@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { View, TextInput, Button, Text, Alert, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import supabase, { saveSession } from "../../lib/supabase";
+import AuthStatus from "../components/AuthStatus";
 
 export default function LoginScreen() {
     const router = useRouter();
@@ -26,6 +27,7 @@ export default function LoginScreen() {
 
     return (
         <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 20 }}>
+            <AuthStatus />
             <Text>Email:</Text>
             <TextInput value={email} onChangeText={setEmail} autoCapitalize="none" style={{ borderWidth: 1, padding: 10, width: "80%" }} />
 

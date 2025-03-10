@@ -2,11 +2,19 @@ import React, { useState } from "react";
 import { View, Button, Text, Alert, ActivityIndicator, ScrollView, Platform } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import axios from "axios";
+import AuthStatus from '../components/AuthStatus';
+
+interface CoachingInsight {
+    timestamp: number;
+    coaching: string;
+    type: string;
+    confidence: number;
+}
 
 export default function UploadScreen() {
     const [status, setStatus] = useState("");
     const [uploading, setUploading] = useState(false);
-    const [coachingInsights, setCoachingInsights] = useState([]);
+    const [coachingInsights, setCoachingInsights] = useState<CoachingInsight[]>([]);
 
     const uploadVideo = async () => {
         // Request permissions to access photo library
@@ -32,7 +40,6 @@ export default function UploadScreen() {
             // Special handling for web
             const response = await fetch(video.uri);
             const blob = await response.blob();
-
             formData.append("video", new File([blob], "upload.mp4", { type: "video/mp4" }));
         } else {
             // Mobile (iOS/Android)
@@ -40,7 +47,7 @@ export default function UploadScreen() {
                 uri: video.uri,
                 name: "upload.mp4",
                 type: "video/mp4",
-            });
+            } as any); // Type assertion needed for React Native
         }
 
         setStatus("Uploading...");
@@ -81,26 +88,29 @@ export default function UploadScreen() {
     };
 
     return (
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 20 }}>
-            <Button title="Select Video from Photos" onPress={uploadVideo} />
-            <Text style={{ marginTop: 20 }}>{status}</Text>
-            {uploading && <ActivityIndicator size="large" style={{ marginTop: 20 }} />}
+        <View style={{ flex: 1 }}>
+            <AuthStatus />
+            <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 20 }}>
+                <Button title="Select Video from Photos" onPress={uploadVideo} />
+                <Text style={{ marginTop: 20 }}>{status}</Text>
+                {uploading && <ActivityIndicator size="large" style={{ marginTop: 20 }} />}
 
-            {/* 🔥 Display coaching insights in a simple list */}
-            {coachingInsights.length > 0 && (
-                <ScrollView style={{ marginTop: 20, width: "100%" }}>
-                    <Text style={{ fontSize: 18, fontWeight: "bold" }}>Coaching Insights:</Text>
-                    {coachingInsights.map((tip, index) => (
-                        <View key={index} style={{ marginBottom: 10, padding: 10, backgroundColor: "#f0f0f0", borderRadius: 8 }}>
-                            <Text style={{ fontSize: 16, fontWeight: "bold" }}>⏱️ {tip.timestamp}s</Text>
-                            <Text style={{ fontSize: 14, marginTop: 5 }}>{tip.coaching}</Text>
-                            <Text style={{ fontSize: 12, color: "gray", marginTop: 5 }}>
-                                Type: {tip.type} | Confidence: {tip.confidence}
-                            </Text>
-                        </View>
-                    ))}
-                </ScrollView>
-            )}
+                {/* 🔥 Display coaching insights in a simple list */}
+                {coachingInsights.length > 0 && (
+                    <ScrollView style={{ marginTop: 20, width: "100%" }}>
+                        <Text style={{ fontSize: 18, fontWeight: "bold" }}>Coaching Insights:</Text>
+                        {coachingInsights.map((tip, index) => (
+                            <View key={index} style={{ marginBottom: 10, padding: 10, backgroundColor: "#f0f0f0", borderRadius: 8 }}>
+                                <Text style={{ fontSize: 16, fontWeight: "bold" }}>⏱️ {tip.timestamp}s</Text>
+                                <Text style={{ fontSize: 14, marginTop: 5 }}>{tip.coaching}</Text>
+                                <Text style={{ fontSize: 12, color: "gray", marginTop: 5 }}>
+                                    Type: {tip.type} | Confidence: {tip.confidence}
+                                </Text>
+                            </View>
+                        ))}
+                    </ScrollView>
+                )}
+            </View>
         </View>
     );
 }

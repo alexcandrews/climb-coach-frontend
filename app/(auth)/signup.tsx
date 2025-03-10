@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { View, TextInput, Button, Text, Alert, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import supabase, { saveSession } from "../../lib/supabase";
+import AuthStatus from "../components/AuthStatus";
 
 export default function SignUpScreen() {
     const router = useRouter();
@@ -36,6 +37,7 @@ export default function SignUpScreen() {
 
     return (
         <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 20 }}>
+            <AuthStatus />
             <Text>Email:</Text>
             <TextInput 
                 value={email} 
