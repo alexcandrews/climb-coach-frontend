@@ -31,3 +31,5 @@ android/
 Thumbs.db
 .vscode/
 .idea/
+
+seeds/
