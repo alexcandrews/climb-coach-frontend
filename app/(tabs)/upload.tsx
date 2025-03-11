@@ -1,11 +1,14 @@
 import React, { useState, useRef, useEffect } from "react";
 import { View, Alert, StyleSheet, Platform, Switch, Text, SafeAreaView } from "react-native";
-import { Video } from 'expo-av';
+import { Video, ResizeMode } from 'expo-av';
 import * as ImagePicker from "expo-image-picker";
 import axios from "axios";
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import AuthStatus from '../components/AuthStatus';
 import VideoPlayer from '../components/VideoPlayer';
 import Timeline from '../components/Timeline';
+import SwipeableBottomSheet from '../components/SwipeableBottomSheet';
+import { DEV_MODE, API_CONFIG } from '../config';
 
 // Import seed data
 const SEED_VIDEO_URI = require('../../seeds/climbing-video.mp4');
@@ -21,11 +24,27 @@ interface CoachingInsight {
 const parseCoachingMoments = (data: any): CoachingInsight[] => {
     try {
         if (typeof data === 'string') {
-            // Remove markdown code block syntax and parse
-            return JSON.parse(data.replace(/```json\n|\n```/g, ''));
+            // Try parsing directly first
+            try {
+                return JSON.parse(data);
+            } catch {
+                // If direct parsing fails, try to extract JSON array
+                const jsonMatch = data.match(/\[[\s\S]*?\]/);
+                if (jsonMatch) {
+                    return JSON.parse(jsonMatch[0]);
+                }
+            }
         } else if (data.coaching_moments) {
-            // Handle the case where it's wrapped in coaching_moments
-            return JSON.parse(data.coaching_moments.replace(/```json\n|\n```/g, ''));
+            // Try parsing the coaching_moments string
+            try {
+                return JSON.parse(data.coaching_moments);
+            } catch {
+                // If direct parsing fails, try to extract JSON array
+                const jsonMatch = data.coaching_moments.match(/\[[\s\S]*?\]/);
+                if (jsonMatch) {
+                    return JSON.parse(jsonMatch[0]);
+                }
+            }
         } else if (Array.isArray(data)) {
             return data;
         }
@@ -43,20 +62,17 @@ export default function UploadScreen() {
     const [videoUri, setVideoUri] = useState<string | null>(null);
     const [videoDuration, setVideoDuration] = useState(0);
     const [currentPosition, setCurrentPosition] = useState(0);
-    const [useSeedData, setUseSeedData] = useState(__DEV__);
+    const [useSeedData, setUseSeedData] = useState(false);
     const videoRef = useRef<Video>(null);
 
     // Load seed data when useSeedData is enabled
     useEffect(() => {
         if (useSeedData) {
-            console.log('Loading seed data...'); // Debug log
             setVideoUri(SEED_VIDEO_URI);
             const parsedMoments = parseCoachingMoments(SEED_COACHING_MOMENTS);
-            console.log('Parsed coaching moments:', parsedMoments); // Debug log
             setCoachingInsights(parsedMoments);
-            setStatus("Using seed data");
+            setStatus("");  // Don't show "Using seed data" message
         } else {
-            console.log('Clearing seed data...'); // Debug log
             setVideoUri(null);
             setCoachingInsights([]);
             setVideoDuration(0);
@@ -65,7 +81,6 @@ export default function UploadScreen() {
     }, [useSeedData]);
 
     const handleVideoLoad = (duration: number) => {
-        console.log('Video loaded with duration:', duration);
         setVideoDuration(duration);
     };
 
@@ -74,7 +89,6 @@ export default function UploadScreen() {
     };
 
     const handleSeek = (position: number) => {
-        console.log('Seeking to position:', position);
         if (videoRef.current) {
             setCurrentPosition(position);
         }
@@ -128,7 +142,7 @@ export default function UploadScreen() {
 
         try {
             let response = await axios.post(
-                "https://climb-coach-backend-production.up.railway.app/upload",
+                `${API_CONFIG.BASE_URL}/upload`,
                 formData,
                 {
                     headers: {
@@ -141,6 +155,7 @@ export default function UploadScreen() {
                 setStatus("✅ Upload successful! Processing...");
                 const parsedMoments = parseCoachingMoments(response.data.coaching_moments);
                 setCoachingInsights(parsedMoments);
+                setTimeout(() => setStatus(""), 1000);
             } else {
                 setStatus("❌ Upload failed!");
             }
@@ -153,41 +168,51 @@ export default function UploadScreen() {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
-            {/* Development Mode Toggle */}
-            {__DEV__ && (
-                <View style={styles.devModeContainer}>
-                    <Text style={styles.devModeText}>Use Seed Data</Text>
-                    <Switch
-                        value={useSeedData}
-                        onValueChange={setUseSeedData}
-                        trackColor={{ false: '#767577', true: '#81b0ff' }}
-                        thumbColor={useSeedData ? '#2196F3' : '#f4f3f4'}
-                    />
+        <View style={styles.container}>
+            <SafeAreaView style={styles.container}>
+                {/* Development Mode UI */}
+                {DEV_MODE && (
+                    <View style={styles.devModeContainer}>
+                        <View style={styles.devModeBanner}>
+                            <Text style={styles.devModeBannerText}>DEVELOPMENT MODE</Text>
+                        </View>
+                        <View style={styles.seedDataToggle}>
+                            <Text style={styles.devModeText}>Use Seed Data</Text>
+                            <Switch
+                                value={useSeedData}
+                                onValueChange={setUseSeedData}
+                                trackColor={{ false: '#767577', true: '#81b0ff' }}
+                                thumbColor={useSeedData ? '#2196F3' : '#f4f3f4'}
+                            />
+                        </View>
+                    </View>
+                )}
+                
+                <View style={styles.headerContainer}>
+                    <AuthStatus />
                 </View>
-            )}
-            
-            <View style={styles.headerContainer}>
-                <AuthStatus />
-            </View>
 
-            <VideoPlayer 
-                videoUri={videoUri}
-                videoRef={videoRef}
-                onSelectVideo={uploadVideo}
-                onLoadComplete={handleVideoLoad}
-                onPositionChange={handlePositionChange}
-                seekTo={currentPosition}
-            />
-            <Timeline 
-                uploading={uploading}
-                status={status}
-                coachingInsights={coachingInsights}
-                videoDuration={videoDuration}
-                currentPosition={currentPosition}
-                onSeek={handleSeek}
-            />
-        </SafeAreaView>
+                <VideoPlayer 
+                    videoUri={videoUri}
+                    videoRef={videoRef}
+                    onSelectVideo={uploadVideo}
+                    onLoadComplete={handleVideoLoad}
+                    onPositionChange={handlePositionChange}
+                    seekTo={currentPosition}
+                />
+
+                <SwipeableBottomSheet>
+                    <Timeline 
+                        uploading={uploading}
+                        status={status}
+                        coachingInsights={coachingInsights}
+                        videoDuration={videoDuration}
+                        currentPosition={currentPosition}
+                        onSeek={handleSeek}
+                    />
+                </SwipeableBottomSheet>
+            </SafeAreaView>
+        </View>
     );
 }
 
@@ -201,13 +226,25 @@ const styles = StyleSheet.create({
         backgroundColor: 'transparent',
     },
     devModeContainer: {
+        backgroundColor: '#FFE082',
+        borderBottomWidth: 1,
+        borderBottomColor: '#FFD54F',
+    },
+    devModeBanner: {
+        backgroundColor: '#FF9800',
+        padding: 5,
+        alignItems: 'center',
+    },
+    devModeBannerText: {
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: 12,
+    },
+    seedDataToggle: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'flex-end',
         padding: 10,
-        backgroundColor: '#FFE082',
-        borderBottomWidth: 1,
-        borderBottomColor: '#FFD54F',
     },
     devModeText: {
         marginRight: 10,

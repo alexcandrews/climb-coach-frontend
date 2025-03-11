@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, LayoutChangeEvent } from 'react-native';
 import { CoachingInsight } from '../types/coaching';
 
 interface CoachingMomentsListProps {
@@ -13,6 +13,7 @@ export default function CoachingMomentsList({
 }: CoachingMomentsListProps) {
     const scrollViewRef = useRef<ScrollView>(null);
     const lastScrolledIndex = useRef<number>(-1);
+    const cardHeights = useRef<{ [key: number]: number }>({});
 
     const formatTime = useCallback((seconds: number): string => {
         const mins = Math.floor(seconds / 60);
@@ -33,12 +34,26 @@ export default function CoachingMomentsList({
         return -1;
     }, [moments, currentPosition]);
 
+    const handleCardLayout = (index: number) => (event: LayoutChangeEvent) => {
+        const height = event.nativeEvent.layout.height;
+        if (cardHeights.current[index] !== height) {
+            cardHeights.current[index] = height;
+        }
+    };
+
     // Auto-scroll to active moment only when the active moment changes
     useEffect(() => {
         if (activeIndex >= 0 && scrollViewRef.current && lastScrolledIndex.current !== activeIndex) {
             lastScrolledIndex.current = activeIndex;
+            
+            // Calculate offset by summing heights of previous cards
+            let offset = 0;
+            for (let i = 0; i < activeIndex; i++) {
+                offset += (cardHeights.current[i] || 0) + styles.momentCard.marginBottom;
+            }
+            
             scrollViewRef.current.scrollTo({
-                y: activeIndex * (styles.momentCard.height + styles.momentCard.marginBottom),
+                y: offset,
                 animated: true
             });
         }
@@ -58,6 +73,7 @@ export default function CoachingMomentsList({
                         styles.momentCard,
                         index === activeIndex && styles.activeMomentCard
                     ]}
+                    onLayout={handleCardLayout(index)}
                 >
                     <View style={styles.momentHeader}>
                         <Text style={styles.timestamp}>⏱️ {formatTime(moment.timestamp)}</Text>
@@ -91,7 +107,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 3,
         elevation: 3,
-        height: 120, // Fixed height for consistent scrolling
+        minHeight: 100, // Minimum height instead of fixed height
     },
     activeMomentCard: {
         backgroundColor: '#E3F2FD',
@@ -128,5 +144,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#333',
         lineHeight: 22,
+        flexWrap: 'wrap', // Ensure text wraps properly
     },
 }); 
