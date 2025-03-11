@@ -65,8 +65,12 @@ export default function CoachingMomentsList({
             ref={scrollViewRef}
             style={styles.container}
             contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
+            showsVerticalScrollIndicator={true}
             scrollEventThrottle={16}
+            bounces={true}
+            alwaysBounceVertical={true}
+            overScrollMode="always"
+            decelerationRate="normal"
         >
             {moments.map((moment, index) => (
                 <View 
@@ -95,35 +99,30 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: 'transparent',
-        ...(Platform.OS === 'web' ? {
-            backgroundColor: 'rgba(245, 245, 245, 0)',
-        } : {}),
+        width: '100%',
+        height: '100%',
     },
     scrollContent: {
         paddingTop: 20,
         paddingHorizontal: 20,
+        paddingBottom: 20,
         backgroundColor: 'transparent',
-        ...(Platform.OS === 'web' ? {
-            backgroundColor: 'rgba(245, 245, 245, 0)',
-        } : {}),
+        width: '100%',
+        flexGrow: 1,
     },
     momentCard: {
         padding: 16,
         minHeight: 100,
         borderRadius: 12,
         marginBottom: 12,
-        backgroundColor: 'rgba(255, 255, 255, 0.15)',
-        ...(Platform.OS === 'web' ? {
-            backgroundColor: 'rgba(255, 255, 255, 0.15)',
-        } : {}),
+        backgroundColor: 'rgba(33, 150, 243, 0.1)',
+        width: '100%',
+        flexShrink: 0,
     },
     activeMomentCard: {
         borderColor: '#2196F3',
         borderWidth: 1,
-        backgroundColor: 'rgba(255, 255, 255, 0.25)',
-        ...(Platform.OS === 'web' ? {
-            backgroundColor: 'rgba(255, 255, 255, 0.25)',
-        } : {}),
+        backgroundColor: 'rgba(33, 150, 243, 0.2)',
     },
     momentHeader: {
         flexDirection: 'row',
@@ -131,22 +130,16 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 8,
         backgroundColor: 'transparent',
-        ...(Platform.OS === 'web' ? {
-            backgroundColor: 'rgba(245, 245, 245, 0)',
-        } : {}),
     },
     typeContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: 'transparent',
-        ...(Platform.OS === 'web' ? {
-            backgroundColor: 'rgba(245, 245, 245, 0)',
-        } : {}),
     },
     timestamp: {
         fontSize: 14,
         fontWeight: '600',
-        color: '#000',
+        color: '#2196F3',
     },
     type: {
         fontSize: 14,
@@ -161,7 +154,7 @@ const styles = StyleSheet.create({
     },
     coaching: {
         fontSize: 16,
-        color: '#000',
+        color: '#E1F5FE',
         lineHeight: 22,
         flexWrap: 'wrap',
     },

@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
     },
     waitingText: {
         textAlign: 'center',
-        color: '#666',
+        color: '#E1F5FE',
     },
     timelineContainer: {
         marginVertical: 20,
@@ -121,26 +121,26 @@ const styles = StyleSheet.create({
     },
     timeline: {
         height: 4,
-        backgroundColor: '#ddd',
+        backgroundColor: 'rgba(76, 175, 80, 0.2)', // Light green background
         borderRadius: 2,
         position: 'relative',
     },
     progress: {
         position: 'absolute',
         height: '100%',
-        backgroundColor: '#2196F3',
+        backgroundColor: '#4CAF50', // Solid green for progress
         borderRadius: 2,
     },
     currentPositionMarker: {
         position: 'absolute',
         width: 12,
         height: 12,
-        backgroundColor: '#2196F3',
+        backgroundColor: '#4CAF50',
         borderRadius: 6,
         top: -4,
         marginLeft: -6,
         borderWidth: 2,
-        borderColor: '#fff',
+        borderColor: '#E1F5FE',
     },
     marker: {
         position: 'absolute',
@@ -151,9 +151,9 @@ const styles = StyleSheet.create({
         width: 12,
         height: 12,
         borderRadius: 6,
-        backgroundColor: '#FFC107',
+        backgroundColor: '#FF9800', // Orange for markers
         borderWidth: 2,
-        borderColor: '#fff',
+        borderColor: '#E1F5FE',
         marginTop: -4,
     },
     timeLabels: {
@@ -165,6 +165,6 @@ const styles = StyleSheet.create({
     },
     timeLabel: {
         fontSize: 12,
-        color: '#666',
+        color: '#E1F5FE',
     },
 }); 

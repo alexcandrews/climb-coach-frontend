@@ -157,11 +157,30 @@ export default function UploadScreen() {
                 setCoachingInsights(parsedMoments);
                 setTimeout(() => setStatus(""), 1000);
             } else {
-                setStatus("❌ Upload failed!");
+                const errorMessage = response.data?.message || response.data?.error || 'Upload failed';
+                setStatus(`❌ ${errorMessage}`);
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error("❌ Upload Error:", error);
-            setStatus("❌ Error uploading video.");
+            let errorMessage = "Error uploading video";
+            
+            if (error.response) {
+                // Server responded with error
+                const data = error.response.data;
+                errorMessage = data?.message || data?.error || `Server error: ${error.response.status}`;
+            } else if (error.request) {
+                // Request made but no response
+                errorMessage = "No response from server. Check your internet connection.";
+            } else {
+                // Error in request setup
+                errorMessage = error.message || "Failed to make request";
+            }
+            
+            if (DEV_MODE) {
+                errorMessage += `\n(${error.message})`;
+            }
+            
+            setStatus(`❌ ${errorMessage}`);
         } finally {
             setUploading(false);
         }
@@ -224,22 +243,25 @@ const styles = StyleSheet.create({
     },
     devModeContainer: {
         position: 'absolute',
-        top: 0,
+        top: Platform.OS === 'ios' ? 60 : 20,
         left: 0,
         right: 0,
-        backgroundColor: 'rgba(255, 255, 255, 0.8)',
-        padding: Spacing.sm,
         zIndex: 10,
     },
     seedDataToggle: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'flex-end',
+        justifyContent: 'flex-start',
+        marginLeft: Spacing.sm,
+        backgroundColor: 'transparent',
     },
     devModeText: {
         marginRight: 10,
         fontSize: 14,
         fontWeight: '500',
-        color: Colors.text.secondary,
+        color: '#fff',
+        textShadowColor: 'rgba(0, 0, 0, 0.75)',
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 2,
     },
 });

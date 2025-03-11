@@ -12,6 +12,7 @@ import { PanGestureHandler } from 'react-native-gesture-handler';
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const MIN_HEIGHT = 350; // Initial height of the bottom sheet
 const MAX_HEIGHT = SCREEN_HEIGHT - 100; // Maximum height, leaving some space at top
+const DEBUG_MODE = __DEV__;
 
 const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
 
@@ -79,10 +80,12 @@ const SwipeableBottomSheet: React.FC<SwipeableBottomSheetProps> = ({ children })
 
     return (
         <PanGestureHandler onGestureEvent={gestureHandler}>
-            <Animated.View style={[styles.container, rBottomSheetStyle]}>
-                <BlurView intensity={25} tint="light" style={[StyleSheet.absoluteFill, styles.blurContainer]}>
-                    <View style={styles.handle} />
-                    {children}
+            <Animated.View style={[styles.container, rBottomSheetStyle]} testID="swipeable-bottom-sheet">
+                <BlurView intensity={25} tint="light" style={[StyleSheet.absoluteFill, styles.blurContainer]} testID="bottom-sheet-blur">
+                    <View style={styles.handle} testID="bottom-sheet-handle" />
+                    <View style={styles.contentContainer} testID="bottom-sheet-content">
+                        {children}
+                    </View>
                 </BlurView>
             </Animated.View>
         </PanGestureHandler>
@@ -100,17 +103,27 @@ const styles = StyleSheet.create({
         borderTopRightRadius: 25,
         overflow: 'hidden',
         backgroundColor: 'transparent',
-        ...(Platform.OS === 'web' ? {
-            // Override React Native Web defaults
-            backgroundColor: 'rgba(245, 245, 245, 0)',
+        ...(DEBUG_MODE && Platform.OS === 'web' ? {
+            outline: '2px solid red',
         } : {}),
     },
     blurContainer: {
         borderTopLeftRadius: 25,
         borderTopRightRadius: 25,
+        backgroundColor: Platform.select({
+            ios: 'transparent',
+            android: 'rgba(255, 255, 255, 0.1)',
+            default: 'rgba(245, 245, 245, 0)',
+        }),
+        ...(DEBUG_MODE && Platform.OS === 'web' ? {
+            outline: '2px solid blue',
+        } : {}),
+    },
+    contentContainer: {
+        flex: 1,
         backgroundColor: 'transparent',
-        ...(Platform.OS === 'web' ? {
-            backgroundColor: 'rgba(245, 245, 245, 0)',
+        ...(DEBUG_MODE && Platform.OS === 'web' ? {
+            outline: '2px solid green',
         } : {}),
     },
     handle: {
@@ -120,6 +133,9 @@ const styles = StyleSheet.create({
         alignSelf: 'center',
         marginVertical: 15,
         borderRadius: 2,
+        ...(DEBUG_MODE && Platform.OS === 'web' ? {
+            outline: '2px solid yellow',
+        } : {}),
     },
 });
 

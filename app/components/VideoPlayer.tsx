@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
     },
     uploadButton: {
         position: 'absolute',
-        top: 20,
+        top: Platform.OS === 'ios' ? 60 : 20,
         right: 20,
         width: 48,
         height: 48,
