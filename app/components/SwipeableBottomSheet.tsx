@@ -1,5 +1,6 @@
 import React from 'react';
-import { StyleSheet, Dimensions, Platform } from 'react-native';
+import { StyleSheet, Dimensions, Platform, View } from 'react-native';
+import { BlurView } from 'expo-blur';
 import Animated, { 
     useAnimatedGestureHandler,
     useAnimatedStyle,
@@ -11,6 +12,8 @@ import { PanGestureHandler } from 'react-native-gesture-handler';
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const MIN_HEIGHT = 350; // Initial height of the bottom sheet
 const MAX_HEIGHT = SCREEN_HEIGHT - 100; // Maximum height, leaving some space at top
+
+const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
 
 type SwipeableBottomSheetProps = {
     children: React.ReactNode;
@@ -72,51 +75,48 @@ const SwipeableBottomSheet: React.FC<SwipeableBottomSheetProps> = ({ children })
 
     const rBottomSheetStyle = useAnimatedStyle(() => ({
         transform: [{ translateY: translateY.value }],
-        ...(Platform.OS === 'web' ? {
-            cursor: 'grab',
-            userSelect: 'none',
-            touchAction: 'none',
-        } as any : {})
     }));
 
     return (
         <PanGestureHandler onGestureEvent={gestureHandler}>
-            <Animated.View style={[styles.bottomSheetContainer, rBottomSheetStyle]}>
-                <Animated.View style={styles.handle} />
-                {children}
+            <Animated.View style={[styles.container, rBottomSheetStyle]}>
+                <BlurView intensity={25} tint="light" style={[StyleSheet.absoluteFill, styles.blurContainer]}>
+                    <View style={styles.handle} />
+                    {children}
+                </BlurView>
             </Animated.View>
         </PanGestureHandler>
     );
 };
 
 const styles = StyleSheet.create({
-    bottomSheetContainer: {
+    container: {
         position: 'absolute',
         left: 0,
         right: 0,
         bottom: 0,
         height: MAX_HEIGHT,
-        backgroundColor: 'rgba(245, 245, 245, 0.6)', // More transparent background
         borderTopLeftRadius: 25,
         borderTopRightRadius: 25,
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: -4,
-        },
-        shadowOpacity: 0.1, // Reduced shadow opacity
-        shadowRadius: 4,
-        elevation: 5,
-        zIndex: 1000,
+        overflow: 'hidden',
+        backgroundColor: 'transparent',
         ...(Platform.OS === 'web' ? {
-            // @ts-ignore - Web-specific style
-            backdropFilter: 'blur(20px)', // Increased blur effect
+            // Override React Native Web defaults
+            backgroundColor: 'rgba(245, 245, 245, 0)',
+        } : {}),
+    },
+    blurContainer: {
+        borderTopLeftRadius: 25,
+        borderTopRightRadius: 25,
+        backgroundColor: 'transparent',
+        ...(Platform.OS === 'web' ? {
+            backgroundColor: 'rgba(245, 245, 245, 0)',
         } : {}),
     },
     handle: {
         width: 75,
         height: 4,
-        backgroundColor: 'rgba(102, 102, 102, 0.5)', // More transparent handle
+        backgroundColor: 'rgba(102, 102, 102, 0.3)',
         alignSelf: 'center',
         marginVertical: 15,
         borderRadius: 2,

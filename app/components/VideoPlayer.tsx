@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, Button, StyleSheet, TouchableWithoutFeedback, Platform, TouchableOpacity, Dimensions } from 'react-native';
 import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
 import { Ionicons } from '@expo/vector-icons';
+import Colors from '@/constants/Colors';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const TAB_BAR_HEIGHT = 49; // Standard tab bar height
@@ -110,44 +111,40 @@ export default function VideoPlayer({
     return (
         <View style={styles.container}>
             {videoUri ? (
-                <>
-                    <TouchableWithoutFeedback onPress={handlePlayPause}>
-                        <View style={styles.videoContainer}>
-                            <Video
-                                ref={videoRef}
-                                style={styles.video}
-                                source={typeof videoUri === 'string' ? { uri: videoUri } : videoUri}
-                                resizeMode={ResizeMode.COVER}
-                                isLooping={false}
-                                isMuted={true}
-                                shouldPlay={false}
-                                onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
-                                onLoad={handleLoad}
-                                progressUpdateIntervalMillis={500}
-                            />
-                            {!isPlaying && (
-                                <View style={styles.playOverlay}>
-                                    <Text style={styles.playIcon}>▶️</Text>
-                                </View>
-                            )}
-                        </View>
-                    </TouchableWithoutFeedback>
-                    <TouchableOpacity 
-                        style={styles.uploadButton} 
-                        onPress={onSelectVideo}
-                    >
-                        <Ionicons name="add" size={28} color="white" />
-                    </TouchableOpacity>
-                </>
+                <TouchableWithoutFeedback onPress={handlePlayPause}>
+                    <View style={styles.videoContainer}>
+                        <Video
+                            ref={videoRef}
+                            style={styles.video}
+                            source={typeof videoUri === 'string' ? { uri: videoUri } : videoUri}
+                            resizeMode={ResizeMode.COVER}
+                            isLooping={false}
+                            isMuted={true}
+                            shouldPlay={false}
+                            onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
+                            onLoad={handleLoad}
+                            progressUpdateIntervalMillis={500}
+                        />
+                        {!isPlaying && (
+                            <View style={styles.playOverlay}>
+                                <Text style={styles.playIcon}>▶️</Text>
+                            </View>
+                        )}
+                    </View>
+                </TouchableWithoutFeedback>
             ) : (
-                <TouchableOpacity 
-                    style={[styles.uploadPrompt, styles.center]} 
-                    onPress={onSelectVideo}
-                >
+                <View style={[styles.uploadPrompt, styles.center]}>
                     <Ionicons name="cloud-upload-outline" size={48} color="#666" />
-                    <Text style={styles.uploadPromptText}>Tap to Upload Video</Text>
-                </TouchableOpacity>
+                    <Text style={styles.uploadPromptText}>Tap + to Upload Video</Text>
+                </View>
             )}
+            
+            <TouchableOpacity 
+                style={styles.uploadButton} 
+                onPress={onSelectVideo}
+            >
+                <Ionicons name="add" size={28} color="white" />
+            </TouchableOpacity>
         </View>
     );
 }
@@ -196,12 +193,12 @@ const styles = StyleSheet.create({
     },
     uploadButton: {
         position: 'absolute',
+        top: 20,
         right: 20,
-        bottom: 20,
-        width: 56,
-        height: 56,
-        borderRadius: 28,
-        backgroundColor: '#2196F3',
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        backgroundColor: Colors.primary.main,
         justifyContent: 'center',
         alignItems: 'center',
         shadowColor: '#000',
@@ -212,5 +209,6 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.25,
         shadowRadius: 3.84,
         elevation: 5,
+        zIndex: 1000,
     },
 }); 

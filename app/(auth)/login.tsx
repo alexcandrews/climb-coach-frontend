@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { View, TextInput, Button, Text, Alert, ActivityIndicator, StyleSheet, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import supabase, { saveSession } from "../../lib/supabase";
-import AuthStatus from "../components/AuthStatus";
 
 export default function LoginScreen() {
     const router = useRouter();
@@ -89,8 +88,6 @@ export default function LoginScreen() {
 
     return (
         <View style={styles.container}>
-            <AuthStatus />
-            
             <Text style={styles.title}>Welcome Back!</Text>
             
             <Text style={styles.label}>Email:</Text>

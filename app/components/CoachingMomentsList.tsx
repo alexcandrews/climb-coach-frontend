@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, LayoutChangeEvent, Platform } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { CoachingInsight } from '../types/coaching';
 
 interface CoachingMomentsListProps {
@@ -49,7 +50,7 @@ export default function CoachingMomentsList({
             // Calculate offset by summing heights of previous cards
             let offset = 0;
             for (let i = 0; i < activeIndex; i++) {
-                offset += (cardHeights.current[i] || 0) + styles.momentCard.marginBottom;
+                offset += (cardHeights.current[i] || 0) + 12;
             }
             
             scrollViewRef.current.scrollTo({
@@ -63,6 +64,7 @@ export default function CoachingMomentsList({
         <ScrollView 
             ref={scrollViewRef}
             style={styles.container}
+            contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
             scrollEventThrottle={16}
         >
@@ -92,45 +94,59 @@ export default function CoachingMomentsList({
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        marginTop: 20,
+        backgroundColor: 'transparent',
+        ...(Platform.OS === 'web' ? {
+            backgroundColor: 'rgba(245, 245, 245, 0)',
+        } : {}),
+    },
+    scrollContent: {
+        paddingTop: 20,
+        paddingHorizontal: 20,
+        backgroundColor: 'transparent',
+        ...(Platform.OS === 'web' ? {
+            backgroundColor: 'rgba(245, 245, 245, 0)',
+        } : {}),
     },
     momentCard: {
-        backgroundColor: 'rgba(255, 255, 255, 0.6)',
-        borderRadius: 12,
         padding: 16,
-        marginBottom: 12,
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
-        elevation: 3,
         minHeight: 100,
+        borderRadius: 12,
+        marginBottom: 12,
+        backgroundColor: 'rgba(255, 255, 255, 0.15)',
         ...(Platform.OS === 'web' ? {
-            backdropFilter: 'blur(20px)',
+            backgroundColor: 'rgba(255, 255, 255, 0.15)',
         } : {}),
     },
     activeMomentCard: {
-        backgroundColor: 'rgba(227, 242, 253, 0.8)',
         borderColor: '#2196F3',
         borderWidth: 1,
+        backgroundColor: 'rgba(255, 255, 255, 0.25)',
+        ...(Platform.OS === 'web' ? {
+            backgroundColor: 'rgba(255, 255, 255, 0.25)',
+        } : {}),
     },
     momentHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 8,
-    },
-    timestamp: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: 'rgba(102, 102, 102, 0.9)',
+        backgroundColor: 'transparent',
+        ...(Platform.OS === 'web' ? {
+            backgroundColor: 'rgba(245, 245, 245, 0)',
+        } : {}),
     },
     typeContainer: {
         flexDirection: 'row',
         alignItems: 'center',
+        backgroundColor: 'transparent',
+        ...(Platform.OS === 'web' ? {
+            backgroundColor: 'rgba(245, 245, 245, 0)',
+        } : {}),
+    },
+    timestamp: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#000',
     },
     type: {
         fontSize: 14,
@@ -145,7 +161,7 @@ const styles = StyleSheet.create({
     },
     coaching: {
         fontSize: 16,
-        color: 'rgba(51, 51, 51, 0.9)',
+        color: '#000',
         lineHeight: 22,
         flexWrap: 'wrap',
     },

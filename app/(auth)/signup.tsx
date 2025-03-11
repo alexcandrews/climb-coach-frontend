@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { View, TextInput, Button, Text, Alert, ActivityIndicator, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import supabase, { saveSession } from "../../lib/supabase";
-import AuthStatus from "../components/AuthStatus";
 
 interface PasswordRequirement {
     label: string;
@@ -99,8 +98,6 @@ export default function SignUpScreen() {
 
     return (
         <View style={styles.container}>
-            <AuthStatus />
-            
             <Text style={styles.label}>Email:</Text>
             <TextInput 
                 value={email} 
