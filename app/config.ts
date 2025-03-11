@@ -1,5 +1,5 @@
 // Development configuration
-export const DEV_MODE = false;  // Set to true to enable development mode
+export const DEV_MODE = true;
 
 // API configuration
 export const API_CONFIG = {

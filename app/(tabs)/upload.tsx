@@ -1,14 +1,14 @@
 import React, { useState, useRef, useEffect } from "react";
-import { View, Alert, StyleSheet, Platform, Switch, Text, SafeAreaView } from "react-native";
+import { View, Alert, StyleSheet, Platform, Switch, Text } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Video, ResizeMode } from 'expo-av';
 import * as ImagePicker from "expo-image-picker";
 import axios from "axios";
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import AuthStatus from '../components/AuthStatus';
 import VideoPlayer from '../components/VideoPlayer';
 import Timeline from '../components/Timeline';
 import SwipeableBottomSheet from '../components/SwipeableBottomSheet';
 import { DEV_MODE, API_CONFIG } from '../config';
+import Colors, { Spacing, Shadows } from '@/constants/Colors';
 
 // Import seed data
 const SEED_VIDEO_URI = require('../../seeds/climbing-video.mp4');
@@ -169,29 +169,7 @@ export default function UploadScreen() {
 
     return (
         <View style={styles.container}>
-            <SafeAreaView style={styles.container}>
-                {/* Development Mode UI */}
-                {DEV_MODE && (
-                    <View style={styles.devModeContainer}>
-                        <View style={styles.devModeBanner}>
-                            <Text style={styles.devModeBannerText}>DEVELOPMENT MODE</Text>
-                        </View>
-                        <View style={styles.seedDataToggle}>
-                            <Text style={styles.devModeText}>Use Seed Data</Text>
-                            <Switch
-                                value={useSeedData}
-                                onValueChange={setUseSeedData}
-                                trackColor={{ false: '#767577', true: '#81b0ff' }}
-                                thumbColor={useSeedData ? '#2196F3' : '#f4f3f4'}
-                            />
-                        </View>
-                    </View>
-                )}
-                
-                <View style={styles.headerContainer}>
-                    <AuthStatus />
-                </View>
-
+            <View style={styles.videoContainer}>
                 <VideoPlayer 
                     videoUri={videoUri}
                     videoRef={videoRef}
@@ -200,7 +178,23 @@ export default function UploadScreen() {
                     onPositionChange={handlePositionChange}
                     seekTo={currentPosition}
                 />
+            </View>
 
+            {DEV_MODE && (
+                <View style={styles.devModeContainer}>
+                    <View style={styles.seedDataToggle}>
+                        <Text style={styles.devModeText}>Use Seed Data</Text>
+                        <Switch
+                            value={useSeedData}
+                            onValueChange={setUseSeedData}
+                            trackColor={{ false: '#767577', true: '#81b0ff' }}
+                            thumbColor={useSeedData ? '#2196F3' : '#f4f3f4'}
+                        />
+                    </View>
+                </View>
+            )}
+
+            {videoUri && (
                 <SwipeableBottomSheet>
                     <Timeline 
                         uploading={uploading}
@@ -211,7 +205,7 @@ export default function UploadScreen() {
                         onSeek={handleSeek}
                     />
                 </SwipeableBottomSheet>
-            </SafeAreaView>
+            )}
         </View>
     );
 }
@@ -219,36 +213,33 @@ export default function UploadScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f5f5f5',
+        backgroundColor: '#000',
     },
-    headerContainer: {
-        paddingVertical: 10,
-        backgroundColor: 'transparent',
+    videoContainer: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
     },
     devModeContainer: {
-        backgroundColor: '#FFE082',
-        borderBottomWidth: 1,
-        borderBottomColor: '#FFD54F',
-    },
-    devModeBanner: {
-        backgroundColor: '#FF9800',
-        padding: 5,
-        alignItems: 'center',
-    },
-    devModeBannerText: {
-        color: 'white',
-        fontWeight: 'bold',
-        fontSize: 12,
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: 'rgba(255, 255, 255, 0.8)',
+        padding: Spacing.sm,
+        zIndex: 10,
     },
     seedDataToggle: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'flex-end',
-        padding: 10,
     },
     devModeText: {
         marginRight: 10,
         fontSize: 14,
         fontWeight: '500',
+        color: Colors.text.secondary,
     },
 });

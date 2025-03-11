@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, Button, StyleSheet, TouchableWithoutFeedback, Platform } from 'react-native';
+import { View, Text, Button, StyleSheet, TouchableWithoutFeedback, Platform, TouchableOpacity, Dimensions } from 'react-native';
 import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
+import { Ionicons } from '@expo/vector-icons';
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const TAB_BAR_HEIGHT = 49; // Standard tab bar height
 
 interface VideoPlayerProps {
     videoUri: string | null;
@@ -104,56 +108,82 @@ export default function VideoPlayer({
     };
 
     return (
-        <View style={styles.videoSection}>
+        <View style={styles.container}>
             {videoUri ? (
-                <TouchableWithoutFeedback onPress={handlePlayPause}>
-                    <View style={styles.videoContainer}>
-                        <Video
-                            ref={videoRef}
-                            style={styles.video}
-                            source={typeof videoUri === 'string' ? { uri: videoUri } : videoUri}
-                            resizeMode={ResizeMode.CONTAIN}
-                            isLooping={false}
-                            isMuted={true}
-                            shouldPlay={false}
-                            onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
-                            onLoad={handleLoad}
-                            progressUpdateIntervalMillis={500} // Further reduced update frequency
-                        />
-                        {!isPlaying && (
-                            <View style={styles.playOverlay}>
-                                <Text style={styles.playIcon}>▶️</Text>
-                            </View>
-                        )}
-                    </View>
-                </TouchableWithoutFeedback>
+                <>
+                    <TouchableWithoutFeedback onPress={handlePlayPause}>
+                        <View style={styles.videoContainer}>
+                            <Video
+                                ref={videoRef}
+                                style={styles.video}
+                                source={typeof videoUri === 'string' ? { uri: videoUri } : videoUri}
+                                resizeMode={ResizeMode.COVER}
+                                isLooping={false}
+                                isMuted={true}
+                                shouldPlay={false}
+                                onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
+                                onLoad={handleLoad}
+                                progressUpdateIntervalMillis={500}
+                            />
+                            {!isPlaying && (
+                                <View style={styles.playOverlay}>
+                                    <Text style={styles.playIcon}>▶️</Text>
+                                </View>
+                            )}
+                        </View>
+                    </TouchableWithoutFeedback>
+                    <TouchableOpacity 
+                        style={styles.uploadButton} 
+                        onPress={onSelectVideo}
+                    >
+                        <Ionicons name="add" size={28} color="white" />
+                    </TouchableOpacity>
+                </>
             ) : (
-                <View style={styles.placeholderContainer}>
-                    <Text style={styles.placeholderText}>
-                        No video selected
-                    </Text>
-                    <Button title="Select Video" onPress={onSelectVideo} />
-                </View>
+                <TouchableOpacity 
+                    style={[styles.uploadPrompt, styles.center]} 
+                    onPress={onSelectVideo}
+                >
+                    <Ionicons name="cloud-upload-outline" size={48} color="#666" />
+                    <Text style={styles.uploadPromptText}>Tap to Upload Video</Text>
+                </TouchableOpacity>
             )}
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    videoSection: {
-        flex: 2,
+    container: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: TAB_BAR_HEIGHT,
         backgroundColor: '#000',
+    },
+    videoContainer: {
+        flex: 1,
+        backgroundColor: '#000',
+    },
+    video: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        bottom: 0,
+        right: 0,
+    },
+    uploadPrompt: {
+        flex: 1,
+        backgroundColor: '#f5f5f5',
+    },
+    center: {
         justifyContent: 'center',
         alignItems: 'center',
     },
-    videoContainer: {
-        width: '100%',
-        height: '100%',
-        position: 'relative',
-    },
-    video: {
-        width: '100%',
-        height: '100%',
+    uploadPromptText: {
+        marginTop: 16,
+        fontSize: 16,
+        color: '#666',
     },
     playOverlay: {
         ...StyleSheet.absoluteFillObject,
@@ -162,17 +192,25 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     playIcon: {
-        fontSize: 50,
-        opacity: 0.9,
+        fontSize: 64,
     },
-    placeholderContainer: {
-        alignItems: 'center',
+    uploadButton: {
+        position: 'absolute',
+        right: 20,
+        bottom: 20,
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        backgroundColor: '#2196F3',
         justifyContent: 'center',
-        padding: 20,
-    },
-    placeholderText: {
-        fontSize: 18,
-        color: '#666',
-        marginBottom: 20,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
     },
 }); 

@@ -17,11 +17,15 @@ type SwipeableBottomSheetProps = {
 };
 
 const SwipeableBottomSheet: React.FC<SwipeableBottomSheetProps> = ({ children }) => {
+    // Start at minimum height (showing MIN_HEIGHT from bottom)
     const translateY = useSharedValue(SCREEN_HEIGHT - MIN_HEIGHT);
 
     const scrollTo = (destination: number) => {
         'worklet';
-        translateY.value = withSpring(destination, { damping: 50 });
+        translateY.value = withSpring(destination, { 
+            damping: 50,
+            stiffness: 300,
+        });
     };
 
     const gestureHandler = useAnimatedGestureHandler({
@@ -29,30 +33,39 @@ const SwipeableBottomSheet: React.FC<SwipeableBottomSheetProps> = ({ children })
             ctx.startY = translateY.value;
         },
         onActive: (event, ctx: any) => {
+            // Calculate new position
             const newTranslateY = ctx.startY + event.translationY;
+            
+            // Clamp the value between max height (smallest Y) and min height (largest Y)
             translateY.value = Math.max(
-                SCREEN_HEIGHT - MAX_HEIGHT,
-                Math.min(SCREEN_HEIGHT - MIN_HEIGHT, newTranslateY)
+                SCREEN_HEIGHT - MAX_HEIGHT, // Upper bound (maximum up-swipe)
+                Math.min(SCREEN_HEIGHT - MIN_HEIGHT, newTranslateY) // Lower bound (maximum down-swipe)
             );
         },
         onEnd: (event) => {
-            const velocity = event.velocityY;
-            const shouldSnap = Math.abs(velocity) > 500;
             const currentHeight = SCREEN_HEIGHT - translateY.value;
-            const midHeight = (MAX_HEIGHT + MIN_HEIGHT) / 2;
+            const velocity = event.velocityY;
+            const isQuickSwipe = Math.abs(velocity) > 500;
 
-            if (shouldSnap) {
+            if (isQuickSwipe) {
+                // Quick swipe takes precedence over position
                 if (velocity > 0) {
-                    // Swipe down
+                    // Quick swipe down - minimize
                     scrollTo(SCREEN_HEIGHT - MIN_HEIGHT);
                 } else {
-                    // Swipe up
+                    // Quick swipe up - maximize
                     scrollTo(SCREEN_HEIGHT - MAX_HEIGHT);
                 }
-            } else if (currentHeight > midHeight) {
-                scrollTo(SCREEN_HEIGHT - MAX_HEIGHT);
             } else {
-                scrollTo(SCREEN_HEIGHT - MIN_HEIGHT);
+                // No quick swipe - use position relative to middle
+                const midHeight = (MAX_HEIGHT + MIN_HEIGHT) / 2;
+                if (currentHeight > midHeight) {
+                    // Past halfway point - maximize
+                    scrollTo(SCREEN_HEIGHT - MAX_HEIGHT);
+                } else {
+                    // Before halfway point - minimize
+                    scrollTo(SCREEN_HEIGHT - MIN_HEIGHT);
+                }
             }
         },
     });
@@ -83,7 +96,7 @@ const styles = StyleSheet.create({
         right: 0,
         bottom: 0,
         height: MAX_HEIGHT,
-        backgroundColor: '#f5f5f5',
+        backgroundColor: 'rgba(245, 245, 245, 0.6)', // More transparent background
         borderTopLeftRadius: 25,
         borderTopRightRadius: 25,
         shadowColor: '#000',
@@ -91,15 +104,19 @@ const styles = StyleSheet.create({
             width: 0,
             height: -4,
         },
-        shadowOpacity: 0.25,
+        shadowOpacity: 0.1, // Reduced shadow opacity
         shadowRadius: 4,
         elevation: 5,
         zIndex: 1000,
+        ...(Platform.OS === 'web' ? {
+            // @ts-ignore - Web-specific style
+            backdropFilter: 'blur(20px)', // Increased blur effect
+        } : {}),
     },
     handle: {
         width: 75,
         height: 4,
-        backgroundColor: '#666',
+        backgroundColor: 'rgba(102, 102, 102, 0.5)', // More transparent handle
         alignSelf: 'center',
         marginVertical: 15,
         borderRadius: 2,

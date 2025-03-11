@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, LayoutChangeEvent } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, LayoutChangeEvent, Platform } from 'react-native';
 import { CoachingInsight } from '../types/coaching';
 
 interface CoachingMomentsListProps {
@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
         marginTop: 20,
     },
     momentCard: {
-        backgroundColor: 'white',
+        backgroundColor: 'rgba(255, 255, 255, 0.6)',
         borderRadius: 12,
         padding: 16,
         marginBottom: 12,
@@ -107,10 +107,13 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 3,
         elevation: 3,
-        minHeight: 100, // Minimum height instead of fixed height
+        minHeight: 100,
+        ...(Platform.OS === 'web' ? {
+            backdropFilter: 'blur(20px)',
+        } : {}),
     },
     activeMomentCard: {
-        backgroundColor: '#E3F2FD',
+        backgroundColor: 'rgba(227, 242, 253, 0.8)',
         borderColor: '#2196F3',
         borderWidth: 1,
     },
@@ -123,7 +126,7 @@ const styles = StyleSheet.create({
     timestamp: {
         fontSize: 14,
         fontWeight: '600',
-        color: '#666',
+        color: 'rgba(102, 102, 102, 0.9)',
     },
     typeContainer: {
         flexDirection: 'row',
@@ -142,8 +145,8 @@ const styles = StyleSheet.create({
     },
     coaching: {
         fontSize: 16,
-        color: '#333',
+        color: 'rgba(51, 51, 51, 0.9)',
         lineHeight: 22,
-        flexWrap: 'wrap', // Ensure text wraps properly
+        flexWrap: 'wrap',
     },
 }); 
