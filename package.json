@@ -1,56 +1,20 @@
 {
-  "name": "climbing-coach-frontend",
-  "main": "expo-router/entry",
-  "license": "0BSD",
+  "name": "climb-coach",
   "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend",
+    "shared"
+  ],
   "scripts": {
-    "start": "expo start",
-    "android": "expo run:android",
-    "ios": "expo run:ios",
-    "web": "expo start --web",
-    "test": "jest --watchAll"
-  },
-  "jest": {
-    "preset": "jest-expo"
-  },
-  "dependencies": {
-    "@expo/vector-icons": "^14.0.2",
-    "@react-navigation/native": "^7.0.14",
-    "@supabase/supabase-js": "^2.49.1",
-    "axios": "^1.8.2",
-    "dotenv": "^16.4.7",
-    "eas-cli": "^15.0.14",
-    "expo": "~52.0.37",
-    "expo-av": "~15.0.2",
-    "expo-constants": "^17.0.7",
-    "expo-document-picker": "^13.0.3",
-    "expo-font": "~13.0.4",
-    "expo-image-picker": "~16.0.6",
-    "expo-linking": "~7.0.5",
-    "expo-router": "~4.0.17",
-    "expo-secure-store": "^14.0.1",
-    "expo-splash-screen": "~0.29.22",
-    "expo-status-bar": "~2.0.1",
-    "expo-system-ui": "~4.0.8",
-    "expo-updates": "~0.27.1",
-    "expo-web-browser": "~14.0.2",
-    "react": "18.3.1",
-    "react-dom": "18.3.1",
-    "react-native": "0.76.7",
-    "react-native-gesture-handler": "^2.24.0",
-    "react-native-reanimated": "~3.16.1",
-    "react-native-safe-area-context": "4.12.0",
-    "react-native-screens": "~4.4.0",
-    "react-native-web": "~0.19.13",
-    "expo-blur": "~14.0.3"
-  },
-  "devDependencies": {
-    "@babel/core": "^7.25.2",
-    "@types/react": "~18.3.12",
-    "jest": "^29.2.1",
-    "jest-expo": "~52.0.4",
-    "react-test-renderer": "18.3.1",
-    "typescript": "~5.3.3"
-  },
-  "private": true
+    "frontend": "cd frontend && npm start",
+    "frontend:build": "cd frontend && eas build",
+    "frontend:update": "cd frontend && eas update",
+    "backend:dev": "cd backend && npm run dev",
+    "backend:start": "cd backend && npm start",
+    "install:all": "npm install && npm run install:frontend && npm run install:backend",
+    "install:frontend": "cd frontend && npm install",
+    "install:backend": "cd backend && npm install"
+  }
 }
