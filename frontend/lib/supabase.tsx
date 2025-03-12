@@ -1,14 +1,15 @@
+import 'react-native-url-polyfill/auto';
 import { createClient } from "@supabase/supabase-js";
 import * as SecureStore from "expo-secure-store";
 import Constants from "expo-constants";
 import { Platform } from "react-native";
 import { Session } from "@supabase/supabase-js";
 
-const SUPABASE_URL = Constants.expoConfig?.extra?.SUPABASE_URL?.trim();
-const SUPABASE_ANON_KEY = Constants.expoConfig?.extra?.SUPABASE_ANON_KEY?.trim();
+const SUPABASE_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_URL;
+const SUPABASE_ANON_KEY = Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
 console.log("🔍 Final Check: SUPABASE_URL =", JSON.stringify(SUPABASE_URL));
-console.log("🔍 Final Check: SUPABASE_ANON_KEY =", SUPABASE_ANON_KEY ? "Loaded ✅" : "Not Loaded ❌");
+console.log("�� Final Check: SUPABASE_ANON_KEY =", SUPABASE_ANON_KEY ? "Loaded ✅" : "Not Loaded ❌");
 
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     throw new Error("❌ Supabase URL and API key are required.");

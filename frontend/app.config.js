@@ -1,45 +1,47 @@
 import "dotenv/config";
 
-export default {
+module.exports = {
   expo: {
-    name: "climbing-coach",
-    slug: "climbing-coach",
+    name: "Climb Coach",
+    slug: "climbing-coach-frontend",
     version: "1.0.0",
     orientation: "portrait",
-    icon: "./assets/icon.png",
-    userInterfaceStyle: "light",
+    icon: "./assets/images/icon.png",
+    scheme: "myapp",
+    userInterfaceStyle: "automatic",
     splash: {
-      image: "./assets/splash.png",
+      image: "./assets/images/splash-icon.png",
       resizeMode: "contain",
-      backgroundColor: "#ffffff",
+      backgroundColor: "#ffffff"
     },
-    updates: {
-      url: "https://u.expo.dev/a729388d-8cef-4799-98cd-32b49fc25651"
-    },
-    assetBundlePatterns: ["**/*"],
+    assetBundlePatterns: [
+      "**/*"
+    ],
     ios: {
       supportsTablet: true,
-      bundleIdentifier: "com.alexcandrews.climbingcoach"
+      bundleIdentifier: "com.alexcandrews.climbingcoachfrontend"
     },
     android: {
       adaptiveIcon: {
-        foregroundImage: "./assets/adaptive-icon.png",
-        backgroundColor: "#ffffff",
+        foregroundImage: "./assets/images/adaptive-icon.png",
+        backgroundColor: "#ffffff"
       },
-      package: "com.alexcandrews.climbingcoach"
+      package: "com.alexcandrews.climbingcoachfrontend"
     },
     web: {
-      favicon: "./assets/favicon.png",
+      favicon: "./assets/images/favicon.png"
+    },
+    plugins: [
+      "expo-router"
+    ],
+    experiments: {
+      tsconfigPaths: true,
+      typedRoutes: true
     },
     extra: {
-      SUPABASE_URL: process.env.SUPABASE_URL?.replace(/['";]+/g, "") || "",
-      SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY?.replace(/['";]+/g, "") || "",
-      eas: {
-        projectId: "a729388d-8cef-4799-98cd-32b49fc25651"
-      }
-    },
-    runtimeVersion: {
-      policy: "appVersion"
+      EXPO_PUBLIC_SUPABASE_URL: process.env.EXPO_PUBLIC_SUPABASE_URL,
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+      EXPO_PUBLIC_API_URL: process.env.EXPO_PUBLIC_API_URL
     }
   },
 };

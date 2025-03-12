@@ -66,3 +66,9 @@ frontend/*.p12
 frontend/*.key
 frontend/*.mobileprovision
 frontend/*.orig.*
+
+# Environment variables
+frontend/.env
+backend/.env
+frontend/.env.*
+backend/.env.*
