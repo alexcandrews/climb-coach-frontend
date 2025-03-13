@@ -1,8 +1,10 @@
 [build]
-builder = "DOCKERFILE"
+builder = "NIXPACKS"
+buildCommand = "npm install && npm run build:shared && cd backend && npm install"
 watchPatterns = ["backend/**/*", "shared/**/*"]
 
 [deploy]
+startCommand = "cd backend && npm start"
 healthcheckPath = "/health"
 healthcheckTimeout = 100
 restartPolicyType = "ON_FAILURE"
