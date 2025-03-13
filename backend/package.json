@@ -1,19 +1,18 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "main": "server.js",
+  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js",
-    "dev": "node server.js",
-    "build": "echo 'Backend build completed'"
+    "dev": "node server.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@climb-coach/shared": "file:../shared",
+    "@climb-coach/shared": "1.0.0",
     "axios": "^1.8.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
