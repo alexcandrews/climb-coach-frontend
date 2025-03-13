@@ -12,9 +12,8 @@ import { useClientOnlyValue } from '@/components/useClientOnlyValue';
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof Ionicons>['name'];
   color: string;
-  size: number;
 }) {
-  return <Ionicons size={props.size} style={{ marginBottom: -3 }} {...props} />;
+  return <Ionicons style={{ marginBottom: -3 }} {...props} />;
 }
 
 export default function TabLayout() {
