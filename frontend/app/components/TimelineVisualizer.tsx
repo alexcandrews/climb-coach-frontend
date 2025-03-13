@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, PanResponder, GestureResponderEvent, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { CoachingInsight } from '../types/coaching';
+import Colors from '@/constants/Colors';
 
 interface TimelineVisualizerProps {
     moments: CoachingInsight[];
@@ -9,52 +10,28 @@ interface TimelineVisualizerProps {
     onSeek?: (position: number) => void;
 }
 
-export default function TimelineVisualizer({ 
-    moments, 
+export default function TimelineVisualizer({
+    moments,
     videoDuration,
     currentPosition,
-    onSeek 
+    onSeek
 }: TimelineVisualizerProps) {
     const screenWidth = Dimensions.get('window').width;
-    const timelineWidth = screenWidth - 40; // 20px padding on each side
+    const timelineWidth = screenWidth - 32; // 16px padding on each side
 
-    const panResponder = React.useMemo(
-        () =>
-            PanResponder.create({
-                onStartShouldSetPanResponder: () => true,
-                onMoveShouldSetPanResponder: () => true,
-                onPanResponderGrant: (evt: GestureResponderEvent) => {
-                    handleScrub(evt);
-                },
-                onPanResponderMove: (evt: GestureResponderEvent) => {
-                    handleScrub(evt);
-                },
-                onPanResponderRelease: () => {},
-            }),
-        [videoDuration]
-    );
-
-    const handleScrub = (evt: GestureResponderEvent) => {
+    const handleTimelinePress = (event: any) => {
         if (!videoDuration || !onSeek) return;
 
-        const { locationX } = evt.nativeEvent;
+        const { locationX } = event.nativeEvent;
         const position = (locationX / timelineWidth) * videoDuration;
-        
-        // Clamp position between 0 and video duration
-        const clampedPosition = Math.max(0, Math.min(position, videoDuration));
-        onSeek(clampedPosition);
+        onSeek(Math.max(0, Math.min(position, videoDuration)));
     };
 
-    if (!videoDuration) {
-        return (
-            <View style={styles.container}>
-                <Text style={styles.waitingText}>Waiting for video duration...</Text>
-            </View>
-        );
-    }
-
-    const getPositionForTimestamp = (timestamp: number): number => {
-        return (timestamp / videoDuration) * 100;
+    const getPositionStyle = (timestamp: number) => {
+        const position = (timestamp / videoDuration) * timelineWidth;
+        return {
+            left: position,
+        };
     };
 
     const formatTime = (seconds: number): string => {
@@ -63,108 +40,104 @@ export default function TimelineVisualizer({
         return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
+    const currentPositionStyle = {
+        left: (currentPosition / videoDuration) * timelineWidth,
+    };
+
+    if (!videoDuration) {
+        return (
+            <View style={styles.container}>
+                <Text style={styles.waitingText}>Loading video duration...</Text>
+            </View>
+        );
+    }
+
     return (
         <View style={styles.container}>
-            <View style={styles.timelineContainer} {...panResponder.panHandlers}>
-                <View style={[styles.timeline, { width: timelineWidth }]}>
-                    {/* Progress bar */}
-                    <View 
-                        style={[
-                            styles.progress, 
-                            { width: `${(currentPosition / videoDuration) * 100}%` }
-                        ]} 
-                    />
-                    
-                    {/* Current position marker */}
-                    <View 
-                        style={[
-                            styles.currentPositionMarker,
-                            { left: `${(currentPosition / videoDuration) * 100}%` }
-                        ]} 
-                    />
-
-                    {/* Coaching moment markers */}
-                    {moments.map((moment, index) => (
-                        <View
-                            key={index}
+            <TouchableOpacity 
+                style={styles.timeline}
+                onPress={handleTimelinePress}
+            >
+                <View style={styles.timelineBar} />
+                {moments.map((moment, index) => (
+                    <View
+                        key={index}
+                        style={[styles.marker, getPositionStyle(moment.timestamp)]}
+                    >
+                        <View 
                             style={[
-                                styles.marker,
-                                { left: `${getPositionForTimestamp(moment.timestamp)}%` }
-                            ]}
-                        >
-                            <View style={styles.markerDot} />
-                        </View>
-                    ))}
-                </View>
-
-                {/* Time labels */}
-                <View style={styles.timeLabels}>
-                    <Text style={styles.timeLabel}>{formatTime(0)}</Text>
-                    <Text style={styles.timeLabel}>{formatTime(videoDuration)}</Text>
-                </View>
+                                styles.markerDot,
+                                { backgroundColor: getMarkerColor(moment.type) }
+                            ]} 
+                        />
+                    </View>
+                ))}
+                <View style={[styles.playhead, currentPositionStyle]} />
+            </TouchableOpacity>
+            <View style={styles.timeLabels}>
+                <Text style={styles.timeLabel}>0:00</Text>
+                <Text style={styles.timeLabel}>{formatTime(videoDuration)}</Text>
             </View>
         </View>
     );
 }
 
+const getMarkerColor = (type: string): string => {
+    switch (type.toLowerCase()) {
+        case 'movement efficiency':
+            return Colors.success;
+        case 'balance improvement':
+            return Colors.primary.main;
+        case 'strength correction':
+            return Colors.error;
+        default:
+            return Colors.primary.main;
+    }
+};
+
 const styles = StyleSheet.create({
     container: {
-        padding: 10,
-    },
-    waitingText: {
-        textAlign: 'center',
-        color: '#E1F5FE',
-    },
-    timelineContainer: {
-        marginVertical: 20,
-        alignItems: 'center',
+        marginVertical: 10,
     },
     timeline: {
-        height: 4,
-        backgroundColor: 'rgba(76, 175, 80, 0.2)', // Light green background
-        borderRadius: 2,
+        height: 40,
+        justifyContent: 'center',
         position: 'relative',
     },
-    progress: {
-        position: 'absolute',
-        height: '100%',
-        backgroundColor: '#4CAF50', // Solid green for progress
+    timelineBar: {
+        height: 4,
+        backgroundColor: '#ddd',
         borderRadius: 2,
-    },
-    currentPositionMarker: {
-        position: 'absolute',
-        width: 12,
-        height: 12,
-        backgroundColor: '#4CAF50',
-        borderRadius: 6,
-        top: -4,
-        marginLeft: -6,
-        borderWidth: 2,
-        borderColor: '#E1F5FE',
     },
     marker: {
         position: 'absolute',
-        alignItems: 'center',
-        transform: [{ translateX: -6 }],
+        transform: [{ translateX: -6 }], // Center the marker
     },
     markerDot: {
         width: 12,
         height: 12,
         borderRadius: 6,
-        backgroundColor: '#FF9800', // Orange for markers
-        borderWidth: 2,
-        borderColor: '#E1F5FE',
-        marginTop: -4,
+        backgroundColor: Colors.primary.main,
+    },
+    playhead: {
+        position: 'absolute',
+        width: 3,
+        height: 20,
+        backgroundColor: Colors.primary.main,
+        transform: [{ translateX: -1.5 }], // Center the playhead
     },
     timeLabels: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        width: '100%',
-        marginTop: 8,
-        paddingHorizontal: 20,
+        marginTop: 4,
     },
     timeLabel: {
         fontSize: 12,
-        color: '#E1F5FE',
+        color: '#666',
+    },
+    waitingText: {
+        textAlign: 'center',
+        color: '#666',
+        marginVertical: 10,
     },
 }); 

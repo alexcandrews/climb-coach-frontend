@@ -9,6 +9,7 @@ import Timeline from '../components/Timeline';
 import SwipeableBottomSheet from '../components/SwipeableBottomSheet';
 import { DEV_MODE, API_CONFIG } from '../config';
 import Colors, { Spacing, Shadows } from '@/constants/Colors';
+import supabase from '@/lib/supabase';
 
 // Import seed data
 const SEED_VIDEO_URI = require('../../seeds/climbing-video.mp4');
@@ -141,6 +142,25 @@ export default function UploadScreen() {
         setUploading(true);
 
         try {
+            // First, upload video to Supabase storage
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                throw new Error('User not authenticated');
+            }
+
+            const fileName = `${user.id}/${Date.now()}.mp4`;
+            const { data: storageData, error: storageError } = await supabase.storage
+                .from('videos')
+                .upload(fileName, formData);
+
+            if (storageError) throw storageError;
+
+            // Get the public URL for the uploaded video
+            const { data: { publicUrl } } = supabase.storage
+                .from('videos')
+                .getPublicUrl(fileName);
+
+            // Process video with backend
             let response = await axios.post(
                 `${API_CONFIG.BASE_URL}/upload`,
                 formData,
@@ -155,6 +175,19 @@ export default function UploadScreen() {
                 setStatus("✅ Upload successful! Processing...");
                 const parsedMoments = parseCoachingMoments(response.data.coaching_moments);
                 setCoachingInsights(parsedMoments);
+
+                // Save video metadata to Supabase database
+                const { error: dbError } = await supabase
+                    .from('videos')
+                    .insert({
+                        user_id: user.id,
+                        video_url: publicUrl,
+                        duration: videoDuration,
+                        coaching_insights: parsedMoments,
+                    });
+
+                if (dbError) throw dbError;
+
                 setTimeout(() => setStatus(""), 1000);
             } else {
                 const errorMessage = response.data?.message || response.data?.error || 'Upload failed';

@@ -56,40 +56,32 @@ export default function Timeline({
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 10,
-        backgroundColor: 'transparent',
-        width: '100%',
-        height: '100%',
+        backgroundColor: '#fff',
+        padding: 16,
     },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'transparent',
+        padding: 20,
     },
     messageContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'transparent',
+        padding: 20,
     },
     timelineContainer: {
         flex: 1,
-        justifyContent: 'flex-start',
-        backgroundColor: 'transparent',
-        width: '100%',
-        height: '100%',
-    },
-    messageText: {
-        fontSize: 16,
-        color: '#fff',
-        textAlign: 'center',
     },
     statusText: {
-        marginTop: 10,
-        marginBottom: 10,
-        fontSize: 14,
-        color: '#fff',
         textAlign: 'center',
+        marginVertical: 10,
+        color: '#666',
+    },
+    messageText: {
+        textAlign: 'center',
+        color: '#666',
+        fontSize: 16,
     },
 }); 
