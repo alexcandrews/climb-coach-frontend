@@ -1,6 +1,6 @@
 [build]
 builder = "nixpacks"
-buildCommand = "cd shared && npm install && npm run build && cd ../frontend && npm install && npm run build"
+buildCommand = "npm install && npm run build"
 watchPatterns = ["frontend/**/*", "shared/**/*"]
 
 [deploy]

@@ -17,10 +17,9 @@
     "install:frontend": "cd frontend && npm install",
     "install:backend": "cd backend && npm install",
     "dev": "concurrently \"npm run frontend\" \"npm run backend:dev\"",
-    "build": "npm run build:shared && npm run build:frontend && npm run build:backend",
-    "build:shared": "cd shared && npm run build",
-    "build:frontend": "cd frontend && npm run build",
-    "build:backend": "cd backend && npm run build",
+    "build": "npm run build:shared && npm run build:frontend",
+    "build:shared": "cd shared && npm install && npm run build",
+    "build:frontend": "cd frontend && npm install && npm run build",
     "test": "npm run test:frontend && npm run test:backend",
     "test:frontend": "cd frontend && npm test",
     "test:backend": "cd backend && npm test",
@@ -28,7 +27,8 @@
     "postinstall": "npm run build:shared"
   },
   "devDependencies": {
-    "concurrently": "^8.0.0"
+    "concurrently": "^8.0.0",
+    "typescript": "~5.3.3"
   },
   "dependencies": {
     "expo-updates": "~0.27.3"
