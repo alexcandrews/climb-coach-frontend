@@ -1,3 +1,26 @@
+// Define light and dark themes for useThemeColor
+const tintColorLight = '#446A48'; // Primary color
+const tintColorDark = '#5C8A61';  // Primary light color
+
+// Theme colors for useThemeColor
+const themeColors = {
+  light: {
+    text: '#333333',
+    background: '#F5F7F5',
+    tint: tintColorLight,
+    tabIconDefault: '#cccccc',
+    tabIconSelected: tintColorLight,
+  },
+  dark: {
+    text: '#ffffff',
+    background: '#121212',
+    tint: tintColorDark,
+    tabIconDefault: '#cccccc',
+    tabIconSelected: tintColorDark,
+  },
+};
+
+// Original Colors object for backward compatibility
 export const Colors = {
   primary: {
     main: '#446A48',
@@ -55,4 +78,5 @@ export const Shadows = {
   },
 } as const;
 
-export default Colors;
+// Export the theme colors as default for useThemeColor
+export default themeColors;

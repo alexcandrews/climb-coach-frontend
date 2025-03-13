@@ -8,7 +8,7 @@ import VideoPlayer from '../components/VideoPlayer';
 import Timeline from '../components/Timeline';
 import SwipeableBottomSheet from '../components/SwipeableBottomSheet';
 import { DEV_MODE, API_CONFIG } from '../config';
-import Colors, { Spacing, Shadows } from '@/constants/Colors';
+import { Colors, Spacing, Shadows } from '@/constants/Colors';
 import supabase from '@/lib/supabase';
 
 // Import seed data

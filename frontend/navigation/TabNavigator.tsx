@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import UploadScreen from "../app/(tabs)/upload";
 import HistoryScreen from "../app/(tabs)/history";
 import LogoutScreen from "../app/(auth)/logout";
-import Colors from '@/constants/Colors';
+import { Colors } from '@/constants/Colors';
 
 const Tab = createBottomTabNavigator();
 

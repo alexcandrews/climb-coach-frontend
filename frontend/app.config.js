@@ -38,10 +38,17 @@ module.exports = {
       tsconfigPaths: true,
       typedRoutes: true
     },
+    runtimeVersion: "1.0.0",
+    updates: {
+      url: "https://u.expo.dev/05d15da2-f0a7-4542-b0db-b04d41d04281"
+    },
     extra: {
       EXPO_PUBLIC_SUPABASE_URL: process.env.EXPO_PUBLIC_SUPABASE_URL,
       EXPO_PUBLIC_SUPABASE_ANON_KEY: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
-      EXPO_PUBLIC_API_URL: process.env.EXPO_PUBLIC_API_URL
+      EXPO_PUBLIC_API_URL: process.env.EXPO_PUBLIC_API_URL,
+      eas: {
+        projectId: "05d15da2-f0a7-4542-b0db-b04d41d04281"
+      }
     }
   },
 };

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import supabase, { logoutUser } from '@/lib/supabase';
-import Colors, { Spacing, BorderRadius, Shadows } from '@/constants/Colors';
+import { Colors, Spacing, BorderRadius, Shadows } from '@/constants/Colors';
 
 export default function SettingsScreen() {
     const router = useRouter();

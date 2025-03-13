@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { CoachingInsight } from '../types/coaching';
-import Colors from '@/constants/Colors';
+import { Colors } from '@/constants/Colors';
 
 interface TimelineVisualizerProps {
     moments: CoachingInsight[];

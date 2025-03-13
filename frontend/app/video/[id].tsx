@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Video, ResizeMode } from 'expo-av';
 import supabase from '@/lib/supabase';
 import Timeline from '../components/Timeline';
-import Colors, { Spacing, BorderRadius } from '@/constants/Colors';
+import { Colors, Spacing, BorderRadius } from '@/constants/Colors';
 
 interface VideoData {
     id: string;

@@ -4,7 +4,7 @@ import { Pressable } from 'react-native';
 import RequireAuth from '../components/RequireAuth';
 import { Ionicons } from '@expo/vector-icons';
 
-import Colors, { Shadows } from '@/constants/Colors';
+import { Colors, Shadows } from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useClientOnlyValue } from '@/components/useClientOnlyValue';
 
