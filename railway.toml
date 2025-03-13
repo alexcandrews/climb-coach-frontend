@@ -1,10 +1,8 @@
 [build]
-builder = "nixpacks"
-buildCommand = "npm install && npm run build"
+builder = "DOCKERFILE"
 watchPatterns = ["frontend/**/*", "shared/**/*"]
 
 [deploy]
-startCommand = "cd frontend && npm start"
 healthcheckPath = "/"
 healthcheckTimeout = 100
 restartPolicyType = "on_failure" 

@@ -8,7 +8,7 @@
     "shared"
   ],
   "scripts": {
-    "frontend": "cd frontend && npm start",
+    "frontend": "cd frontend && npm run start",
     "frontend:build": "cd frontend && eas build",
     "frontend:update": "cd frontend && eas update",
     "backend:dev": "cd backend && npm run dev",
