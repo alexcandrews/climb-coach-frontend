@@ -24,7 +24,8 @@
     "test": "npm run test:frontend && npm run test:backend",
     "test:frontend": "cd frontend && npm test",
     "test:backend": "cd backend && npm test",
-    "clean": "rm -rf node_modules && rm -rf frontend/node_modules && rm -rf backend/node_modules && rm -rf shared/node_modules"
+    "clean": "rm -rf node_modules && rm -rf frontend/node_modules && rm -rf backend/node_modules && rm -rf shared/node_modules",
+    "postinstall": "npm run build:shared"
   },
   "devDependencies": {
     "concurrently": "^8.0.0"
