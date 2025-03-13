@@ -19,20 +19,27 @@ if (!OPENAI_API_KEY || OPENAI_API_KEY === "your_fallback_key_here") {
     process.exit(1); // Stop the server if API key is missing
 }
 
+// Create necessary directories if they don't exist
+const uploadsDir = "uploads";
+const framesDir = "frames";
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir);
+if (!fs.existsSync(framesDir)) fs.mkdirSync(framesDir);
 
 // Enable CORS for frontend requests
 app.use(cors());
 
+// Health check endpoint
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'ok' });
+});
+
 // Configure Multer for handling file uploads
-const upload = multer({ dest: "uploads/" });
+const upload = multer({ dest: uploadsDir });
 
 // Handle video upload and processing
 app.post("/upload", upload.single("video"), async (req, res) => {
     try {
         const videoPath = req.file.path;
-        const framesDir = "frames";
-
-        if (!fs.existsSync(framesDir)) fs.mkdirSync(framesDir);
 
         console.log("📸 Extracting frames...");
 
@@ -120,7 +127,7 @@ async function getClimbingInsights(imagePaths) {
                         You are an expert rock climbing coach. Your job is to analyze a sequence of climbing images and provide **structured coaching insights**.
                         
                         **Rules for analysis:**
-                        - Identify the climber’s **movement efficiency**, **balance improvement**, and **strength correction**.
+                        - Identify the climber's **movement efficiency**, **balance improvement**, and **strength correction**.
                         - Compare **movement across frames** and identify key improvements.
                         - Provide feedback in **structured JSON format** as follows:
 
@@ -147,7 +154,7 @@ async function getClimbingInsights(imagePaths) {
                     {
                         role: "user",
                         content: [
-                            { type: "text", text: "These images show a sequence of movements from a climber on an indoor 6A route. Identify how the climber’s movement evolves between frames and detect areas where technique needs improvement." },
+                            { type: "text", text: "These images show a sequence of movements from a climber on an indoor 6A route. Identify how the climber's movement evolves between frames and detect areas where technique needs improvement." },
                             { type: "text", text: "Focus on weight shifting, body positioning, and use of dynamic movement. Highlight the most important coaching points in the sequence." },
                             ...base64Images  // Send all images in one request
                         ]

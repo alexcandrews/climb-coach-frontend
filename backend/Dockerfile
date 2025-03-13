@@ -5,24 +5,25 @@ WORKDIR /app
 # Copy package.json files
 COPY package.json ./
 COPY shared/package.json ./shared/
-COPY frontend/package.json ./frontend/
+COPY backend/package.json ./backend/
 
 # Copy tsconfig files
 COPY shared/tsconfig.json ./shared/
-COPY frontend/tsconfig.json ./frontend/
 
 # Copy source code
 COPY shared/src ./shared/src
-COPY frontend ./frontend
+COPY backend ./backend
+
+# Create necessary directories
+RUN mkdir -p backend/uploads backend/frames
 
 # Install dependencies and build
 RUN npm install
 RUN npm run build:shared
-RUN cd frontend && npm install
-RUN cd frontend && npm run build
+RUN cd backend && npm install
 
-# Expose the web port
-EXPOSE 8081
+# Expose the API port
+EXPOSE 8000
 
-# Start the app
-CMD ["npm", "run", "frontend"] 
+# Start the backend
+CMD ["npm", "run", "backend:start"] 
