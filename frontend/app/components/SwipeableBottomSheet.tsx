@@ -104,7 +104,8 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
         backgroundColor: 'transparent',
         ...(DEBUG_MODE && Platform.OS === 'web' ? {
-            outline: '2px solid red',
+            borderWidth: 2,
+            borderColor: 'red',
         } : {}),
     },
     blurContainer: {
@@ -116,14 +117,16 @@ const styles = StyleSheet.create({
             default: 'rgba(245, 245, 245, 0)',
         }),
         ...(DEBUG_MODE && Platform.OS === 'web' ? {
-            outline: '2px solid blue',
+            borderWidth: 2,
+            borderColor: 'blue',
         } : {}),
     },
     contentContainer: {
         flex: 1,
         backgroundColor: 'transparent',
         ...(DEBUG_MODE && Platform.OS === 'web' ? {
-            outline: '2px solid green',
+            borderWidth: 2,
+            borderColor: 'green',
         } : {}),
     },
     handle: {
@@ -134,7 +137,8 @@ const styles = StyleSheet.create({
         marginVertical: 15,
         borderRadius: 2,
         ...(DEBUG_MODE && Platform.OS === 'web' ? {
-            outline: '2px solid yellow',
+            borderWidth: 2,
+            borderColor: 'yellow',
         } : {}),
     },
 });
