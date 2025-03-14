@@ -260,8 +260,16 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '500',
         color: '#fff',
-        textShadowColor: 'rgba(0, 0, 0, 0.75)',
-        textShadowOffset: { width: 0, height: 1 },
-        textShadowRadius: 2,
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.75,
+                shadowRadius: 2,
+            },
+            android: {
+                elevation: 2,
+            },
+        }),
     },
 });
