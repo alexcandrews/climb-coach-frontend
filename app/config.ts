@@ -9,5 +9,5 @@ export const DEV_MODE = true;
 
 // API configuration
 export const API_CONFIG = {
-    BASE_URL: "https://climb-coach-backend-production.up.railway.app",
+    BASE_URL: DEV_MODE ? "http://localhost:8000" : "https://climb-coach-backend-production.up.railway.app",
 } as const; 

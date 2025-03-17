@@ -3,12 +3,12 @@ import { View, Alert, StyleSheet, Platform, Switch, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Video, ResizeMode } from 'expo-av';
 import * as ImagePicker from "expo-image-picker";
-import axios from "axios";
 import VideoPlayer from '../components/VideoPlayer';
 import Timeline from '../components/Timeline';
 import SwipeableBottomSheet from '../components/SwipeableBottomSheet';
 import { DEV_MODE, API_CONFIG } from '../config';
 import Colors, { Spacing, Shadows } from '@/constants/Colors';
+import api from '@/lib/api';
 
 // Import seed data
 const SEED_VIDEO_URI = require('../../seeds/climbing-video.mp4');
@@ -141,15 +141,11 @@ export default function UploadScreen() {
         setUploading(true);
 
         try {
-            let response = await axios.post(
-                `${API_CONFIG.BASE_URL}/upload`,
-                formData,
-                {
-                    headers: {
-                        "Content-Type": "multipart/form-data",
-                    },
-                }
-            );
+            let response = await api.post('/upload', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
 
             if (response.status === 200) {
                 setStatus("✅ Upload successful! Processing...");
