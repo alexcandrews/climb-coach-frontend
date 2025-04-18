@@ -1,100 +1,71 @@
-import React, { useState, useRef, useEffect } from "react";
-import { View, Alert, StyleSheet, Platform, Switch, Text } from 'react-native';
+import React, { useState, useEffect } from "react";
+import { View, Alert, StyleSheet, ScrollView, TouchableOpacity, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Video, ResizeMode } from 'expo-av';
 import * as ImagePicker from "expo-image-picker";
-import VideoPlayer from '../components/VideoPlayer';
-import Timeline from '../components/Timeline';
-import SwipeableBottomSheet from '../components/SwipeableBottomSheet';
-import { DEV_MODE, API_CONFIG } from '../config';
-import Colors, { Spacing, Shadows } from '@/constants/Colors';
-import api from '@/lib/api';
+import { FontAwesome } from '@expo/vector-icons';
+import { DEV_MODE } from '../config';
+import supabase from '@/lib/supabase';
 
-// Import seed data
+// Import video services
+import { 
+    getUserVideos, 
+    uploadVideo, 
+    parseCoachingMoments,
+    UserVideo,
+    CoachingInsight
+} from '@/lib/api/videos';
+
+// Import seed data for development
 const SEED_VIDEO_URI = require('../../seeds/climbing-video.mp4');
 const SEED_COACHING_MOMENTS = require('../../seeds/coaching-moments.json');
 
-interface CoachingInsight {
-    timestamp: number;
-    coaching: string;
-    type: string;
-    confidence: number;
-}
-
-const parseCoachingMoments = (data: any): CoachingInsight[] => {
-    try {
-        if (typeof data === 'string') {
-            // Try parsing directly first
-            try {
-                return JSON.parse(data);
-            } catch {
-                // If direct parsing fails, try to extract JSON array
-                const jsonMatch = data.match(/\[[\s\S]*?\]/);
-                if (jsonMatch) {
-                    return JSON.parse(jsonMatch[0]);
-                }
-            }
-        } else if (data.coaching_moments) {
-            // Try parsing the coaching_moments string
-            try {
-                return JSON.parse(data.coaching_moments);
-            } catch {
-                // If direct parsing fails, try to extract JSON array
-                const jsonMatch = data.coaching_moments.match(/\[[\s\S]*?\]/);
-                if (jsonMatch) {
-                    return JSON.parse(jsonMatch[0]);
-                }
-            }
-        } else if (Array.isArray(data)) {
-            return data;
-        }
-        return [];
-    } catch (error) {
-        console.error('Error parsing coaching moments:', error);
-        return [];
-    }
-};
-
 export default function UploadScreen() {
     const [status, setStatus] = useState("");
-    const [uploading, setUploading] = useState(false);
     const [coachingInsights, setCoachingInsights] = useState<CoachingInsight[]>([]);
     const [videoUri, setVideoUri] = useState<string | null>(null);
     const [videoDuration, setVideoDuration] = useState(0);
-    const [currentPosition, setCurrentPosition] = useState(0);
-    const [useSeedData, setUseSeedData] = useState(false);
-    const videoRef = useRef<Video>(null);
+    const [uploading, setUploading] = useState(false);
+    const [userVideos, setUserVideos] = useState<UserVideo[]>([]);
+    const [loadingVideos, setLoadingVideos] = useState(false);
 
-    // Load seed data when useSeedData is enabled
+    // Use seed data in development mode (set to false by default)
+    const useSeedData = DEV_MODE && false;
+
+    // On component mount, fetch user's videos
     useEffect(() => {
-        if (useSeedData) {
-            setVideoUri(SEED_VIDEO_URI);
-            const parsedMoments = parseCoachingMoments(SEED_COACHING_MOMENTS);
-            setCoachingInsights(parsedMoments);
-            setStatus("");  // Don't show "Using seed data" message
-        } else {
-            setVideoUri(null);
-            setCoachingInsights([]);
-            setVideoDuration(0);
-            setStatus("");
-        }
-    }, [useSeedData]);
+        fetchUserVideos();
+    }, []);
 
-    const handleVideoLoad = (duration: number) => {
-        setVideoDuration(duration);
-    };
-
-    const handlePositionChange = (position: number) => {
-        setCurrentPosition(position);
-    };
-
-    const handleSeek = (position: number) => {
-        if (videoRef.current) {
-            setCurrentPosition(position);
+    // Fetch user's videos from the API
+    const fetchUserVideos = async () => {
+        try {
+            setLoadingVideos(true);
+            
+            // Check authentication status
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session?.access_token) {
+                console.log('Not authenticated, skipping video fetch');
+                return;
+            }
+            
+            const videos = await getUserVideos();
+            setUserVideos(videos);
+        } catch (error) {
+            console.error('Failed to fetch videos:', error);
+        } finally {
+            setLoadingVideos(false);
         }
     };
 
-    const uploadVideo = async () => {
+    // Select a video from the user's library
+    const selectVideo = (videoUrl: string) => {
+        setVideoUri(videoUrl);
+        setCoachingInsights([]); // Clear any previous insights
+    };
+
+    // Handle video upload
+    const handleVideoUpload = async () => {
         if (useSeedData) {
             Alert.alert("Development Mode", "Using seed data instead of uploading");
             return;
@@ -121,151 +92,201 @@ export default function UploadScreen() {
         setVideoUri(video.uri);
         setVideoDuration(0); // Reset duration until new video loads
 
-        const formData = new FormData();
-
-        if (Platform.OS === "web") {
-            // Special handling for web
-            const response = await fetch(video.uri);
-            const blob = await response.blob();
-            formData.append("video", new File([blob], "upload.mp4", { type: "video/mp4" }));
-        } else {
-            // Mobile (iOS/Android)
-            formData.append("video", {
-                uri: video.uri,
-                name: "upload.mp4",
-                type: "video/mp4",
-            } as any);
-        }
-
-        setStatus("Uploading...");
+        // Show uploading status
+        setStatus("Uploading video to server...");
         setUploading(true);
 
         try {
-            let response = await api.post('/upload', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            });
-
-            if (response.status === 200) {
-                setStatus("✅ Upload successful! Processing...");
-                const parsedMoments = parseCoachingMoments(response.data.coaching_moments);
-                setCoachingInsights(parsedMoments);
-                setTimeout(() => setStatus(""), 1000);
+            // Upload video
+            const result = await uploadVideo(video.uri);
+            
+            if (result.url) {
+                setStatus("✅ Upload successful!");
+                console.log("Video URL:", result.url);
+                // Refresh the videos list after upload
+                fetchUserVideos();
+                setTimeout(() => setStatus(""), 2000);
             } else {
-                const errorMessage = response.data?.message || response.data?.error || 'Upload failed';
-                setStatus(`❌ ${errorMessage}`);
+                setStatus(`❌ ${result.error || 'Upload failed'}`);
+                Alert.alert("Upload Failed", result.error || 'Unknown error');
             }
-        } catch (error: any) {
-            console.error("❌ Upload Error:", error);
-            let errorMessage = "Error uploading video";
-            
-            if (error.response) {
-                // Server responded with error
-                const data = error.response.data;
-                errorMessage = data?.message || data?.error || `Server error: ${error.response.status}`;
-            } else if (error.request) {
-                // Request made but no response
-                errorMessage = "No response from server. Check your internet connection.";
-            } else {
-                // Error in request setup
-                errorMessage = error.message || "Failed to make request";
-            }
-            
-            if (DEV_MODE) {
-                errorMessage += `\n(${error.message})`;
-            }
-            
-            setStatus(`❌ ${errorMessage}`);
         } finally {
             setUploading(false);
         }
     };
 
     return (
-        <View style={styles.container}>
-            <View style={styles.videoContainer}>
-                <VideoPlayer 
-                    videoUri={videoUri}
-                    videoRef={videoRef}
-                    onSelectVideo={uploadVideo}
-                    onLoadComplete={handleVideoLoad}
-                    onPositionChange={handlePositionChange}
-                    seekTo={currentPosition}
-                />
+        <SafeAreaView style={styles.container}>
+            <View style={styles.header}>
+                <Text style={styles.title}>Upload Climbing Video</Text>
+                {status ? <Text style={styles.status}>{status}</Text> : null}
             </View>
-
-            {DEV_MODE && (
-                <View style={styles.devModeContainer}>
-                    <View style={styles.seedDataToggle}>
-                        <Text style={styles.devModeText}>Use Seed Data</Text>
-                        <Switch
-                            value={useSeedData}
-                            onValueChange={setUseSeedData}
-                            trackColor={{ false: '#767577', true: '#81b0ff' }}
-                            thumbColor={useSeedData ? '#2196F3' : '#f4f3f4'}
-                        />
+            
+            <View style={{flex: 1, backgroundColor: '#000'}}>
+                {videoUri ? (
+                    <Video
+                        source={{uri: videoUri}}
+                        style={{flex: 1}}
+                        resizeMode={ResizeMode.CONTAIN}
+                        useNativeControls
+                        onLoad={(status) => {
+                            // Check if the playback is ready and duration available
+                            if (status.isLoaded && status.durationMillis) {
+                                setVideoDuration(status.durationMillis / 1000);
+                            }
+                        }}
+                    />
+                ) : (
+                    <View style={styles.uploadPrompt}>
+                        <TouchableOpacity 
+                            style={styles.uploadButton} 
+                            onPress={handleVideoUpload}
+                        >
+                            <FontAwesome name="upload" size={24} color="#fff" />
+                        </TouchableOpacity>
+                        <Text style={styles.uploadText}>Tap to upload a climbing video</Text>
                     </View>
+                )}
+            </View>
+            
+            {userVideos.length > 0 && (
+                <View style={styles.videoList}>
+                    <Text style={styles.sectionTitle}>Your Videos</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                        {userVideos.map((video, index) => (
+                            <TouchableOpacity 
+                                key={index} 
+                                style={styles.videoThumbnail}
+                                onPress={() => selectVideo(video.url)}
+                            >
+                                <View style={styles.thumbnailPlaceholder}>
+                                    <FontAwesome name="video-camera" size={24} color="#fff" />
+                                </View>
+                                <Text style={styles.videoName} numberOfLines={1}>
+                                    {new Date(video.createdAt).toLocaleDateString()}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
                 </View>
             )}
-
-            {videoUri && (
-                <SwipeableBottomSheet>
-                    <Timeline 
-                        uploading={uploading}
-                        status={status}
-                        coachingInsights={coachingInsights}
-                        videoDuration={videoDuration}
-                        currentPosition={currentPosition}
-                        onSeek={handleSeek}
-                    />
-                </SwipeableBottomSheet>
+            
+            {coachingInsights.length > 0 && (
+                <View style={styles.insightsContainer}>
+                    <Text style={styles.sectionTitle}>Coaching Insights</Text>
+                    <ScrollView style={styles.insightsList}>
+                        {coachingInsights.map((insight, index) => (
+                            <View key={index} style={styles.insightItem}>
+                                <Text style={styles.timestamp}>
+                                    {Math.floor(insight.timestamp / 60)}:{(insight.timestamp % 60).toString().padStart(2, '0')}
+                                </Text>
+                                <Text style={styles.coaching}>{insight.coaching}</Text>
+                            </View>
+                        ))}
+                    </ScrollView>
+                </View>
             )}
-        </View>
+        </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#000',
+        backgroundColor: '#F5F7F5',
     },
-    videoContainer: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
+    header: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
     },
-    devModeContainer: {
-        position: 'absolute',
-        top: Platform.OS === 'ios' ? 60 : 20,
-        left: 0,
-        right: 0,
-        zIndex: 10,
+    title: {
+        fontSize: 22,
+        fontWeight: "bold",
+        color: '#333',
+        marginBottom: 4,
     },
-    seedDataToggle: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'flex-start',
-        marginLeft: Spacing.sm,
-        backgroundColor: 'transparent',
-    },
-    devModeText: {
-        marginRight: 10,
+    status: {
         fontSize: 14,
-        fontWeight: '500',
-        color: '#fff',
-        ...Platform.select({
-            ios: {
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.75,
-                shadowRadius: 2,
-            },
-            android: {
-                elevation: 2,
-            },
-        }),
+        color: '#666',
+        opacity: 0.7,
     },
+    uploadPrompt: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#333',
+    },
+    uploadButton: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: '#2196F3',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    uploadText: {
+        color: '#fff',
+        fontSize: 16,
+    },
+    videoList: {
+        paddingHorizontal: 16,
+        paddingVertical: 16,
+        backgroundColor: '#fff',
+    },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: "600",
+        marginBottom: 8,
+        color: '#333',
+    },
+    videoThumbnail: {
+        width: 100,
+        marginRight: 8,
+        alignItems: "center",
+    },
+    thumbnailPlaceholder: {
+        width: 100,
+        height: 56,
+        backgroundColor: '#2196F3',
+        borderRadius: 8,
+        justifyContent: "center",
+        alignItems: "center",
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        elevation: 3,
+    },
+    videoName: {
+        fontSize: 12,
+        color: '#666',
+        marginTop: 4,
+        textAlign: "center",
+    },
+    insightsContainer: {
+        padding: 16,
+        backgroundColor: '#fff',
+        maxHeight: 200,
+    },
+    insightsList: {
+        maxHeight: 160,
+    },
+    insightItem: {
+        flexDirection: 'row',
+        padding: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+    },
+    timestamp: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#2196F3',
+        width: 50,
+    },
+    coaching: {
+        fontSize: 14,
+        color: '#333',
+        flex: 1,
+    }
 });
