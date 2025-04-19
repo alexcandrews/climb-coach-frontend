@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import supabase, { logoutUser } from '@/lib/supabase';
+import supabase, { logoutUser, getUserProfile, updateUserProfile } from '@/lib/supabase';
 import Colors, { Spacing, BorderRadius, Shadows } from '@/constants/Colors';
 
 const SKILL_LEVELS = ['Beginner', 'Intermediate', 'Advanced', 'Expert'];
@@ -19,20 +19,55 @@ const CLIMBING_STYLES = [
 export default function ProfileScreen() {
     const router = useRouter();
     const [email, setEmail] = useState<string | undefined>();
-    const [name, setName] = useState('Alex Turner');
-    const [yearsClimbing, setYearsClimbing] = useState(3);
-    const [primaryGoals, setPrimaryGoals] = useState('Improve technique');
-    const [skillLevel, setSkillLevel] = useState('Intermediate');
-    const [climbingStyles, setClimbingStyles] = useState<string[]>(['Indoor Bouldering']);
+    const [name, setName] = useState('');
+    const [yearsClimbing, setYearsClimbing] = useState(0);
+    const [primaryGoals, setPrimaryGoals] = useState('');
+    const [skillLevel, setSkillLevel] = useState('Beginner');
+    const [climbingStyles, setClimbingStyles] = useState<string[]>([]);
     const [isEditing, setIsEditing] = useState(false);
     const [tempGoals, setTempGoals] = useState('');
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
 
+    // Load user data
     useEffect(() => {
-        const loadUser = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            setEmail(user?.email);
-        };
-        loadUser();
+        async function loadUserData() {
+            setIsLoading(true);
+            try {
+                // Load basic user info
+                const { data: { user } } = await supabase.auth.getUser();
+                setEmail(user?.email);
+
+                // Default values in case profile doesn't exist
+                setName(user?.email?.split('@')[0] || '');
+                
+                // Load profile data
+                const { data: profile, error } = await getUserProfile();
+                if (error) {
+                    console.error('Error loading profile:', error);
+                    Alert.alert('Error', 'Failed to load profile data. Using default values instead.');
+                    return;
+                }
+                
+                if (profile) {
+                    console.log('Loaded profile:', profile);
+                    setName(profile.name || user?.email?.split('@')[0] || '');
+                    setYearsClimbing(profile.years_climbing || 0);
+                    setPrimaryGoals(profile.primary_goals || 'Improve technique');
+                    setSkillLevel(profile.skill_level || 'Beginner');
+                    setClimbingStyles(profile.climbing_styles || ['Indoor Bouldering']);
+                } else {
+                    console.log('No profile found, using defaults');
+                }
+            } catch (error) {
+                console.error('Error loading user data:', error);
+                Alert.alert('Error', 'Failed to load profile data. Using default values instead.');
+            } finally {
+                setIsLoading(false);
+            }
+        }
+
+        loadUserData();
     }, []);
 
     useEffect(() => {
@@ -66,30 +101,82 @@ export default function ProfileScreen() {
         }
     };
 
-    const toggleEditMode = () => {
+    const toggleEditMode = async () => {
         if (isEditing) {
             // Save all changes when exiting edit mode
-            setPrimaryGoals(tempGoals.trim() || 'Improve technique');
+            const updatedGoals = tempGoals.trim() || 'Improve technique';
+            setPrimaryGoals(updatedGoals);
+            
+            // Save to Supabase
+            setIsSaving(true);
+            try {
+                const { error, data } = await updateUserProfile({
+                    name,
+                    years_climbing: yearsClimbing,
+                    primary_goals: updatedGoals,
+                    skill_level: skillLevel,
+                    climbing_styles: climbingStyles,
+                });
+                
+                if (error) {
+                    console.error('Profile update error details:', error);
+                    throw new Error(typeof error === 'string' ? error : error.message || 'Unknown error');
+                }
+                
+                console.log('Profile updated successfully:', data);
+                // Success message
+                Alert.alert('Success', 'Profile updated successfully');
+            } catch (error) {
+                console.error('Error updating profile:', error);
+                Alert.alert('Error', `Failed to update profile: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            } finally {
+                setIsSaving(false);
+            }
         }
         setIsEditing(!isEditing);
     };
+
+    if (isLoading) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color={Colors.primary.main} />
+                    <Text style={styles.loadingText}>Loading profile...</Text>
+                </View>
+            </SafeAreaView>
+        );
+    }
 
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView style={styles.content}>
                 <View style={styles.titleRow}>
                     <Text style={styles.title}>Profile</Text>
-                    <TouchableOpacity onPress={toggleEditMode}>
-                        <Ionicons 
-                            name={isEditing ? "checkmark" : "pencil"} 
-                            size={24} 
-                            color={Colors.primary.main} 
-                        />
+                    <TouchableOpacity onPress={toggleEditMode} disabled={isSaving}>
+                        {isSaving ? (
+                            <ActivityIndicator size="small" color={Colors.primary.main} />
+                        ) : (
+                            <Ionicons 
+                                name={isEditing ? "checkmark" : "pencil"} 
+                                size={24} 
+                                color={Colors.primary.main} 
+                            />
+                        )}
                     </TouchableOpacity>
                 </View>
                 
                 <View style={styles.profileHeader}>
-                    <Text style={styles.nameText}>{name}</Text>
+                    {isEditing ? (
+                        <TextInput
+                            style={styles.nameInput}
+                            value={name}
+                            onChangeText={setName}
+                            placeholder="Your Name"
+                            placeholderTextColor={Colors.text.disabled}
+                        />
+                    ) : (
+                        <Text style={styles.nameText}>{name}</Text>
+                    )}
                     <Text style={styles.emailText}>{email}</Text>
                 </View>
                 
@@ -232,6 +319,16 @@ const styles = StyleSheet.create({
         flex: 1,
         padding: Spacing.md,
     },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    loadingText: {
+        marginTop: Spacing.md,
+        color: Colors.text.secondary,
+        fontSize: 16,
+    },
     titleRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -251,6 +348,15 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: Colors.text.primary,
         marginBottom: Spacing.xs,
+    },
+    nameInput: {
+        fontSize: 22,
+        fontWeight: '600',
+        color: Colors.text.primary,
+        marginBottom: Spacing.xs,
+        borderBottomWidth: 1,
+        borderBottomColor: Colors.primary.main,
+        paddingVertical: Spacing.xs,
     },
     emailText: {
         fontSize: 16,
