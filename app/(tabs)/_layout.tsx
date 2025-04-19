@@ -14,7 +14,7 @@ function TabBarIcon(props: {
   color: string;
   size: number;
 }) {
-  return <Ionicons size={props.size} style={{ marginBottom: -3 }} {...props} />;
+  return <Ionicons style={{ marginBottom: -3 }} {...props} />;
 }
 
 export default function TabLayout() {
@@ -55,11 +55,11 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="settings"
+          name="profile"
           options={{
-            title: 'Settings',
+            title: 'Profile',
             tabBarIcon: ({ color, size }) => (
-              <Ionicons name="settings" size={size} color={color} />
+              <Ionicons name="person" size={size} color={color} />
             ),
           }}
         />
