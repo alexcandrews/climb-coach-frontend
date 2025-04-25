@@ -79,10 +79,7 @@ export default function UploadScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
-                <Text style={styles.title}>Upload Climbing Video</Text>
-                {status ? <Text style={styles.status}>{status}</Text> : null}
-            </View>
+            {status ? <Text style={styles.statusOverlay}>{status}</Text> : null}
             
             <View style={{flex: 1, backgroundColor: '#000'}}>
                 {videoUri ? (
@@ -135,20 +132,16 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#F5F7F5',
     },
-    header: {
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-    },
-    title: {
-        fontSize: 22,
-        fontWeight: "bold",
-        color: '#333',
-        marginBottom: 4,
-    },
-    status: {
+    statusOverlay: {
+        position: 'absolute',
+        top: 16,
+        alignSelf: 'center',
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        color: '#fff',
+        padding: 8,
+        borderRadius: 8,
+        zIndex: 10,
         fontSize: 14,
-        color: '#666',
-        opacity: 0.7,
     },
     uploadPrompt: {
         flex: 1,
@@ -160,7 +153,7 @@ const styles = StyleSheet.create({
         width: 80,
         height: 80,
         borderRadius: 40,
-        backgroundColor: '#2196F3',
+        backgroundColor: '#3DA9FC',
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 16,
@@ -192,7 +185,7 @@ const styles = StyleSheet.create({
     timestamp: {
         fontSize: 14,
         fontWeight: '600',
-        color: '#2196F3',
+        color: '#3DA9FC',
         width: 50,
     },
     coaching: {
