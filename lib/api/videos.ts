@@ -11,6 +11,17 @@ export interface UserVideo {
     url: string;
 }
 
+export interface VideoDetails {
+    id: string;
+    title: string;
+    description?: string;
+    videoUrl: string;
+    thumbnailUrl?: string;
+    location: string;
+    createdAt: string;
+    insights: CoachingInsight[];
+}
+
 export interface CoachingInsight {
     timestamp: number;
     coaching: string;
@@ -33,6 +44,24 @@ export const getUserVideos = async (): Promise<UserVideo[]> => {
     } catch (error) {
         console.error('Failed to fetch videos:', error);
         return [];
+    }
+};
+
+/**
+ * Fetches a specific video by ID
+ * @param videoId The ID of the video to fetch
+ * @returns Promise with video details
+ */
+export const getVideo = async (videoId: string): Promise<VideoDetails | null> => {
+    try {
+        const response = await api.get(`/api/videos/${videoId}`);
+        if (response.status === 200 && response.data) {
+            return response.data;
+        }
+        return null;
+    } catch (error) {
+        console.error('Failed to fetch video:', error);
+        return null;
     }
 };
 

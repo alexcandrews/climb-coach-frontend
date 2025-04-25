@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, RefreshControl, Modal, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import Colors, { Spacing } from '@/constants/Colors';
 import { API_CONFIG } from '../config';
 import { useSession } from '@/lib/useSession';
@@ -25,6 +26,7 @@ interface InsightData {
 }
 
 export default function HistoryScreen() {
+    const router = useRouter();
     const [videos, setVideos] = useState<VideoItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -187,7 +189,10 @@ export default function HistoryScreen() {
                     data={videos}
                     keyExtractor={(item) => item.id}
                     renderItem={({ item }) => (
-                        <View style={styles.videoItem}>
+                        <TouchableOpacity 
+                            style={styles.videoItem}
+                            onPress={() => router.push(`/video/${item.id}`)}
+                        >
                             <Text style={styles.videoName}>{item.name}</Text>
                             <Text style={styles.videoDate}>
                                 {item.createdAt ? formatDate(item.createdAt) : 'Unknown date'}
@@ -199,7 +204,10 @@ export default function HistoryScreen() {
                                     </Text>
                                     <TouchableOpacity 
                                         style={styles.viewInsightsButton}
-                                        onPress={() => fetchVideoInsights(item.id)}
+                                        onPress={(e) => {
+                                            e.stopPropagation();
+                                            fetchVideoInsights(item.id);
+                                        }}
                                         disabled={insightsLoading}
                                     >
                                         <Text style={styles.viewInsightsText}>
@@ -208,7 +216,7 @@ export default function HistoryScreen() {
                                     </TouchableOpacity>
                                 </View>
                             )}
-                        </View>
+                        </TouchableOpacity>
                     )}
                     contentContainerStyle={styles.listContent}
                     refreshControl={
