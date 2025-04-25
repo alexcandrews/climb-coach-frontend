@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { View, Alert, StyleSheet, ScrollView, TouchableOpacity, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Video, ResizeMode } from 'expo-av';
@@ -9,10 +9,8 @@ import supabase from '@/lib/supabase';
 
 // Import video services
 import { 
-    getUserVideos, 
     uploadVideo, 
     parseCoachingMoments,
-    UserVideo,
     CoachingInsight
 } from '@/lib/api/videos';
 
@@ -26,43 +24,9 @@ export default function UploadScreen() {
     const [videoUri, setVideoUri] = useState<string | null>(null);
     const [videoDuration, setVideoDuration] = useState(0);
     const [uploading, setUploading] = useState(false);
-    const [userVideos, setUserVideos] = useState<UserVideo[]>([]);
-    const [loadingVideos, setLoadingVideos] = useState(false);
 
     // Use seed data in development mode (set to false by default)
     const useSeedData = DEV_MODE && false;
-
-    // On component mount, fetch user's videos
-    useEffect(() => {
-        fetchUserVideos();
-    }, []);
-
-    // Fetch user's videos from the API
-    const fetchUserVideos = async () => {
-        try {
-            setLoadingVideos(true);
-            
-            // Check authentication status
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session?.access_token) {
-                console.log('Not authenticated, skipping video fetch');
-                return;
-            }
-            
-            const videos = await getUserVideos();
-            setUserVideos(videos);
-        } catch (error) {
-            console.error('Failed to fetch videos:', error);
-        } finally {
-            setLoadingVideos(false);
-        }
-    };
-
-    // Select a video from the user's library
-    const selectVideo = (videoUrl: string) => {
-        setVideoUri(videoUrl);
-        setCoachingInsights([]); // Clear any previous insights
-    };
 
     // Handle video upload
     const handleVideoUpload = async () => {
@@ -103,8 +67,6 @@ export default function UploadScreen() {
             if (result.url) {
                 setStatus("✅ Upload successful!");
                 console.log("Video URL:", result.url);
-                // Refresh the videos list after upload
-                fetchUserVideos();
                 setTimeout(() => setStatus(""), 2000);
             } else {
                 setStatus(`❌ ${result.error || 'Upload failed'}`);
@@ -148,28 +110,6 @@ export default function UploadScreen() {
                     </View>
                 )}
             </View>
-            
-            {userVideos.length > 0 && (
-                <View style={styles.videoList}>
-                    <Text style={styles.sectionTitle}>Your Videos</Text>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                        {userVideos.map((video, index) => (
-                            <TouchableOpacity 
-                                key={index} 
-                                style={styles.videoThumbnail}
-                                onPress={() => selectVideo(video.url)}
-                            >
-                                <View style={styles.thumbnailPlaceholder}>
-                                    <FontAwesome name="video-camera" size={24} color="#fff" />
-                                </View>
-                                <Text style={styles.videoName} numberOfLines={1}>
-                                    {new Date(video.createdAt).toLocaleDateString()}
-                                </Text>
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
-                </View>
-            )}
             
             {coachingInsights.length > 0 && (
                 <View style={styles.insightsContainer}>
@@ -229,40 +169,11 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 16,
     },
-    videoList: {
-        paddingHorizontal: 16,
-        paddingVertical: 16,
-        backgroundColor: '#fff',
-    },
     sectionTitle: {
         fontSize: 18,
         fontWeight: "600",
         marginBottom: 8,
         color: '#333',
-    },
-    videoThumbnail: {
-        width: 100,
-        marginRight: 8,
-        alignItems: "center",
-    },
-    thumbnailPlaceholder: {
-        width: 100,
-        height: 56,
-        backgroundColor: '#2196F3',
-        borderRadius: 8,
-        justifyContent: "center",
-        alignItems: "center",
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
-        elevation: 3,
-    },
-    videoName: {
-        fontSize: 12,
-        color: '#666',
-        marginTop: 4,
-        textAlign: "center",
     },
     insightsContainer: {
         padding: 16,
