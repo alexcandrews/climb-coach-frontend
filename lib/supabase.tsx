@@ -73,8 +73,15 @@ export async function getSession() {
 
 // 🚪 Logout user
 export async function logoutUser() {
-    await storage.removeItem("userToken");
-    await supabase.auth.signOut();
+    try {
+        await storage.removeItem("userToken");
+        const { error } = await supabase.auth.signOut();
+        if (error) throw error;
+        return true;
+    } catch (error) {
+        console.error('Logout error:', error);
+        throw error;
+    }
 }
 
 // 🧑‍💼 Get user profile

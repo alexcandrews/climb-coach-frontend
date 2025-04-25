@@ -77,8 +77,13 @@ export default function ProfileScreen() {
     }, [isEditing]);
 
     const handleSignOut = async () => {
-        await logoutUser();
-        router.replace('/');
+        try {
+            await logoutUser();
+            router.replace('/login');
+        } catch (error) {
+            console.error('Error signing out:', error);
+            Alert.alert('Error', 'Failed to sign out. Please try again.');
+        }
     };
 
     const incrementYears = () => {
