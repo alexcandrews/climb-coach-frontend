@@ -5,11 +5,10 @@ import { Video, ResizeMode } from 'expo-av';
 import * as ImagePicker from "expo-image-picker";
 import { FontAwesome } from '@expo/vector-icons';
 import { DEV_MODE } from '../config';
-import supabase from '@/lib/supabase';
+import { useRouter } from 'expo-router';
 
 // Import video services
 import { 
-    uploadVideo, 
     parseCoachingMoments,
     CoachingInsight
 } from '@/lib/api/videos';
@@ -24,11 +23,12 @@ export default function UploadScreen() {
     const [videoUri, setVideoUri] = useState<string | null>(null);
     const [videoDuration, setVideoDuration] = useState(0);
     const [uploading, setUploading] = useState(false);
+    const router = useRouter();
 
     // Use seed data in development mode (set to false by default)
     const useSeedData = DEV_MODE && false;
 
-    // Handle video upload
+    // Handle video selection
     const handleVideoUpload = async () => {
         if (useSeedData) {
             Alert.alert("Development Mode", "Using seed data instead of uploading");
@@ -52,29 +52,8 @@ export default function UploadScreen() {
         if (result.canceled) return;
         let video = result.assets[0];
 
-        // Set the video URI for playback
-        setVideoUri(video.uri);
-        setVideoDuration(0); // Reset duration until new video loads
-
-        // Show uploading status
-        setStatus("Uploading video to server...");
-        setUploading(true);
-
-        try {
-            // Upload video
-            const result = await uploadVideo(video.uri);
-            
-            if (result.url) {
-                setStatus("✅ Upload successful!");
-                console.log("Video URL:", result.url);
-                setTimeout(() => setStatus(""), 2000);
-            } else {
-                setStatus(`❌ ${result.error || 'Upload failed'}`);
-                Alert.alert("Upload Failed", result.error || 'Unknown error');
-            }
-        } finally {
-            setUploading(false);
-        }
+        // Navigate to the new details screen with the video URI
+        router.push({ pathname: '/upload/video-details', params: { videoUri: video.uri } });
     };
 
     return (
@@ -82,30 +61,15 @@ export default function UploadScreen() {
             {status ? <Text style={styles.statusOverlay}>{status}</Text> : null}
             
             <View style={{flex: 1, backgroundColor: '#000'}}>
-                {videoUri ? (
-                    <Video
-                        source={{uri: videoUri}}
-                        style={{flex: 1}}
-                        resizeMode={ResizeMode.CONTAIN}
-                        useNativeControls
-                        onLoad={(status) => {
-                            // Check if the playback is ready and duration available
-                            if (status.isLoaded && status.durationMillis) {
-                                setVideoDuration(status.durationMillis / 1000);
-                            }
-                        }}
-                    />
-                ) : (
-                    <View style={styles.uploadPrompt}>
-                        <TouchableOpacity 
-                            style={styles.uploadButton} 
-                            onPress={handleVideoUpload}
-                        >
-                            <FontAwesome name="upload" size={24} color="#fff" />
-                        </TouchableOpacity>
-                        <Text style={styles.uploadText}>Tap to upload a climbing video</Text>
-                    </View>
-                )}
+                <View style={styles.uploadPrompt}>
+                    <TouchableOpacity 
+                        style={styles.uploadButton} 
+                        onPress={handleVideoUpload}
+                    >
+                        <FontAwesome name="upload" size={24} color="#fff" />
+                    </TouchableOpacity>
+                    <Text style={styles.uploadText}>Tap to upload a climbing video</Text>
+                </View>
             </View>
             
             {coachingInsights.length > 0 && (
