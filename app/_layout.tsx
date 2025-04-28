@@ -7,12 +7,13 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
-export {
-  // Catch any errors thrown by the Layout component.
-  ErrorBoundary,
-} from 'expo-router';
+// Export our custom ErrorBoundary for expo-router to use
+export { ErrorBoundary };
 
+// In newer versions of expo-router, ErrorBoundary is no longer exported directly
+// The error handling is now built into the router by default
 export const unstable_settings = {
   // Ensure that reloading on `/modal` keeps a back button present.
   initialRouteName: '(tabs)',

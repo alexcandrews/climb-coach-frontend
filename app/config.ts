@@ -5,7 +5,7 @@ export const DEV_FLAGS = {
 } as const;
 
 // Development configuration
-export const DEV_MODE = true;
+export const DEV_MODE = false;
 
 // API configuration
 export const API_CONFIG = {
