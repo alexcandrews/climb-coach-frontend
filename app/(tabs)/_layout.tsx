@@ -45,6 +45,7 @@ export default function TabLayout() {
           name="upload"
           options={{
             title: 'Upload',
+            headerShown: false,
             tabBarIcon: ({ color }) => <TabBarIcon name="cloud-upload" color={color} />,
           }}
         />

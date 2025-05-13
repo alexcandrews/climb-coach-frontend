@@ -1,11 +1,12 @@
 import React, { useState } from "react";
-import { View, Alert, StyleSheet, ScrollView, TouchableOpacity, Text } from 'react-native';
+import { View, Alert, StyleSheet, ScrollView, TouchableOpacity, Text, StatusBar, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Video, ResizeMode } from 'expo-av';
 import * as ImagePicker from "expo-image-picker";
 import { FontAwesome } from '@expo/vector-icons';
 import { DEV_MODE } from '../config';
 import { useRouter } from 'expo-router';
+import Colors from "../../constants/Colors";
 
 // Import video services
 import { 
@@ -56,105 +57,100 @@ export default function UploadScreen() {
         router.push({ pathname: '/upload/video-details', params: { videoUri: video.uri } });
     };
 
+    // Hide status bar for this screen
+    React.useEffect(() => {
+        StatusBar.setHidden(true);
+        return () => {
+            StatusBar.setHidden(false);
+        };
+    }, []);
+
     return (
-        <SafeAreaView style={styles.container}>
-            {status ? <Text style={styles.statusOverlay}>{status}</Text> : null}
-            
-            <View style={{flex: 1, backgroundColor: '#000'}}>
-                <View style={styles.uploadPrompt}>
-                    <TouchableOpacity 
-                        style={styles.uploadButton} 
-                        onPress={handleVideoUpload}
-                    >
-                        <FontAwesome name="upload" size={24} color="#fff" />
-                    </TouchableOpacity>
-                    <Text style={styles.uploadText}>Tap to upload a climbing video</Text>
+        <View style={styles.container}>
+            <View style={styles.content}>
+                <View style={styles.logoContainer}>
+                    <Image 
+                        source={require('../../assets/images/logos/logo.png')}
+                        style={styles.logo}
+                        resizeMode="contain"
+                    />
                 </View>
+                <Text style={styles.title}>Upload Climb</Text>
+                
+                <TouchableOpacity 
+                    style={styles.uploadButton} 
+                    onPress={handleVideoUpload}
+                >
+                    <FontAwesome name="plus" size={40} color="#fff" />
+                </TouchableOpacity>
+                <Text style={styles.uploadText}>Upload Video</Text>
+                <Text style={styles.uploadDescription}>
+                    Upload a video of your climb to receive feedback.
+                </Text>
             </View>
-            
-            {coachingInsights.length > 0 && (
-                <View style={styles.insightsContainer}>
-                    <Text style={styles.sectionTitle}>Coaching Insights</Text>
-                    <ScrollView style={styles.insightsList}>
-                        {coachingInsights.map((insight, index) => (
-                            <View key={index} style={styles.insightItem}>
-                                <Text style={styles.timestamp}>
-                                    {Math.floor(insight.timestamp / 60)}:{(insight.timestamp % 60).toString().padStart(2, '0')}
-                                </Text>
-                                <Text style={styles.coaching}>{insight.coaching}</Text>
-                            </View>
-                        ))}
-                    </ScrollView>
-                </View>
-            )}
-        </SafeAreaView>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F5F7F5',
-    },
-    statusOverlay: {
+        backgroundColor: Colors.background,
         position: 'absolute',
-        top: 16,
-        alignSelf: 'center',
-        backgroundColor: 'rgba(0,0,0,0.7)',
-        color: '#fff',
-        padding: 8,
-        borderRadius: 8,
-        zIndex: 10,
-        fontSize: 14,
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 1000, 
     },
-    uploadPrompt: {
+    content: {
         flex: 1,
-        justifyContent: 'center',
+        paddingHorizontal: 25,
+        justifyContent: "flex-start",
+        paddingTop: 80,
+        alignItems: "center",
+        maxWidth: 360,
+        width: '100%',
+        alignSelf: 'center',
+    },
+    logoContainer: {
         alignItems: 'center',
-        backgroundColor: '#333',
+        justifyContent: 'center',
+        marginBottom: 60,
+        height: 120,
+    },
+    logo: {
+        width: 120,
+        height: 100,
+    },
+    title: {
+        fontSize: 30,
+        color: Colors.text,
+        textAlign: 'center',
+        marginBottom: 30,
+        fontFamily: 'SpaceGrotesk_700Bold',
     },
     uploadButton: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        backgroundColor: '#3DA9FC',
+        width: 180,
+        height: 180,
+        borderRadius: 12,
+        backgroundColor: Colors.accent,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 16,
+        marginTop: 20,
+        marginBottom: 20,
     },
     uploadText: {
-        color: '#fff',
+        color: Colors.text,
+        fontSize: 22,
+        marginVertical: 10,
+        fontFamily: 'SpaceGrotesk_700Bold',
+    },
+    uploadDescription: {
+        color: Colors.muted,
         fontSize: 16,
-    },
-    sectionTitle: {
-        fontSize: 18,
-        fontWeight: "600",
-        marginBottom: 8,
-        color: '#333',
-    },
-    insightsContainer: {
-        padding: 16,
-        backgroundColor: '#fff',
-        maxHeight: 200,
-    },
-    insightsList: {
-        maxHeight: 160,
-    },
-    insightItem: {
-        flexDirection: 'row',
-        padding: 8,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-    },
-    timestamp: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#3DA9FC',
-        width: 50,
-    },
-    coaching: {
-        fontSize: 14,
-        color: '#333',
-        flex: 1,
+        textAlign: 'center',
+        marginTop: 10,
+        fontFamily: 'PlusJakartaSans_400Regular',
     }
 });
