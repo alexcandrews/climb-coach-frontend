@@ -1,96 +1,70 @@
 import React, { useState, useEffect } from "react";
-import { View, TextInput, Button, Text, Alert, ActivityIndicator, StyleSheet } from "react-native";
+import { View, TextInput, Text, Alert, ActivityIndicator, StyleSheet, TouchableOpacity, StatusBar, Image } from "react-native";
 import { useRouter } from "expo-router";
 import supabase, { saveSession } from "../../lib/supabase";
-
-interface PasswordRequirement {
-    label: string;
-    test: (password: string) => boolean;
-    met: boolean;
-}
+import Colors from "../../constants/Colors";
 
 export default function SignUpScreen() {
     const router = useRouter();
+    const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [confirmPassword, setConfirmPassword] = useState("");
     const [loading, setLoading] = useState(false);
-    const [requirements, setRequirements] = useState<PasswordRequirement[]>([
-        { label: "At least 8 characters long", test: (p) => p.length >= 8, met: false },
-        { label: "Contains a number", test: (p) => /\d/.test(p), met: false },
-        { label: "Contains a special character", test: (p) => /[!@#$%^&*(),.?":{}|<>]/.test(p), met: false },
-        { label: "Contains an uppercase letter", test: (p) => /[A-Z]/.test(p), met: false },
-        { label: "Contains a lowercase letter", test: (p) => /[a-z]/.test(p), met: false },
-    ]);
+    const [errorMessage, setErrorMessage] = useState("");
 
+    // Hide status bar for this screen
     useEffect(() => {
-        // Update requirements status whenever password changes
-        setRequirements(prev => prev.map(req => ({
-            ...req,
-            met: req.test(password)
-        })));
-    }, [password]);
+        StatusBar.setHidden(true);
+        return () => {
+            StatusBar.setHidden(false);
+        };
+    }, []);
 
-    const isPasswordValid = () => requirements.every(req => req.met);
-    const doPasswordsMatch = () => password === confirmPassword;
+    const validateEmail = (email: string) => {
+        return email.includes('@') && email.includes('.');
+    };
 
     const handleSignUp = async () => {
         try {
-            // Validate email
-            if (!email.includes('@') || !email.includes('.')) {
-                Alert.alert("Invalid Email", "Please enter a valid email address");
+            setErrorMessage("");
+
+            // Basic validation
+            if (!name.trim() || !email.trim() || !password.trim()) {
+                setErrorMessage("Please fill in all fields");
                 return;
             }
 
-            // Validate password
-            if (!isPasswordValid()) {
-                Alert.alert("Invalid Password", "Please meet all password requirements");
-                return;
-            }
-
-            // Check password match
-            if (!doPasswordsMatch()) {
-                Alert.alert("Password Mismatch", "Passwords do not match");
+            if (!validateEmail(email)) {
+                setErrorMessage("Please enter a valid email address");
                 return;
             }
 
             setLoading(true);
-            const { data, error } = await supabase.auth.signUp({ email, password });
-            console.log("Signup response:", data); // Debug log
+            const { data, error } = await supabase.auth.signUp({
+                email,
+                password,
+                options: {
+                    data: {
+                        name: name,
+                    }
+                }
+            });
 
             if (error) {
-                Alert.alert("Sign Up Failed", error.message);
+                setErrorMessage(error.message);
                 return;
             }
 
             Alert.alert(
                 "Email Verification Required",
-                `We've sent a verification link to ${email}.\n\n1. Check your email (including spam folder)\n2. Click the verification link\n3. Return here and click 'Back to Login'\n4. Log in with your credentials`,
-                [
-                    { 
-                        text: "Back to Login", 
-                        onPress: () => router.push("/login") 
-                    },
-                    {
-                        text: "Resend Email",
-                        onPress: async () => {
-                            try {
-                                const { error } = await supabase.auth.resend({
-                                    type: 'signup',
-                                    email: email,
-                                });
-                                if (error) throw error;
-                                Alert.alert("Success", "Verification email resent. Please check your inbox.");
-                            } catch (err) {
-                                Alert.alert("Error", "Failed to resend verification email. Please try again.");
-                            }
-                        }
-                    }
-                ]
+                `We've sent a verification link to ${email}.\n\nPlease check your email and click the verification link to complete signup.`,
+                [{ text: "OK" }]
             );
+            
+            router.push("/login");
         } catch (err) {
             console.error("Signup error:", err);
-            Alert.alert("Error", "An unexpected error occurred during signup.");
+            setErrorMessage("An unexpected error occurred. Please try again.");
         } finally {
             setLoading(false);
         }
@@ -98,62 +72,74 @@ export default function SignUpScreen() {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.label}>Email:</Text>
-            <TextInput 
-                value={email} 
-                onChangeText={setEmail} 
-                autoCapitalize="none" 
-                keyboardType="email-address"
-                style={styles.input}
-                placeholder="your@email.com"
-            />
+            <View style={styles.content}>
+                <View style={styles.logoContainer}>
+                    <View style={styles.logoWrapper}>
+                        {/* Stylized curved line logo */}
+                        <View style={styles.logoLine1} />
+                        <View style={styles.logoLine2} />
+                    </View>
+                    <Text style={styles.logoText}>2Beta</Text>
+                </View>
+                <Text style={styles.title}>Sign Up</Text>
+                
+                <TextInput 
+                    value={name} 
+                    onChangeText={(text) => {
+                        setName(text);
+                        setErrorMessage("");
+                    }}
+                    style={styles.input}
+                    placeholder="Name"
+                    placeholderTextColor={Colors.muted}
+                />
 
-            <Text style={styles.label}>Password:</Text>
-            <TextInput 
-                value={password} 
-                onChangeText={setPassword} 
-                secureTextEntry 
-                style={styles.input}
-                placeholder="Enter password"
-            />
+                <TextInput 
+                    value={email} 
+                    onChangeText={(text) => {
+                        setEmail(text);
+                        setErrorMessage("");
+                    }}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    style={styles.input}
+                    placeholder="Email address"
+                    placeholderTextColor={Colors.muted}
+                />
 
-            <Text style={styles.label}>Confirm Password:</Text>
-            <TextInput 
-                value={confirmPassword} 
-                onChangeText={setConfirmPassword} 
-                secureTextEntry 
-                style={[
-                    styles.input,
-                    confirmPassword && { 
-                        borderColor: doPasswordsMatch() ? '#4CAF50' : '#f44336'
-                    }
-                ]}
-                placeholder="Confirm password"
-            />
+                <TextInput 
+                    value={password} 
+                    onChangeText={(text) => {
+                        setPassword(text);
+                        setErrorMessage("");
+                    }}
+                    secureTextEntry 
+                    style={styles.input}
+                    placeholder="Password"
+                    placeholderTextColor={Colors.muted}
+                />
 
-            <View style={styles.requirementsContainer}>
-                <Text style={styles.requirementsTitle}>Password Requirements:</Text>
-                {requirements.map((req, index) => (
-                    <Text 
-                        key={index} 
-                        style={[
-                            styles.requirementText,
-                            { color: req.met ? '#4CAF50' : '#666' }
-                        ]}
-                    >
-                        {req.met ? '✓' : '○'} {req.label}
-                    </Text>
-                ))}
-            </View>
+                {errorMessage ? (
+                    <View style={styles.errorContainer}>
+                        <Text style={styles.errorText}>{errorMessage}</Text>
+                    </View>
+                ) : null}
 
-            <Button 
-                title={loading ? "Signing up..." : "Sign Up"} 
-                onPress={handleSignUp} 
-                disabled={loading || !isPasswordValid() || !doPasswordsMatch()} 
-            />
-            
-            <View style={styles.backButton}>
-                <Button title="Back to Login" onPress={() => router.push("/login")} />
+                <TouchableOpacity 
+                    style={[styles.button, (loading || !name.trim() || !email.trim() || !password.trim()) && styles.buttonDisabled]} 
+                    onPress={handleSignUp}
+                    disabled={loading || !name.trim() || !email.trim() || !password.trim()}
+                >
+                    {loading ? (
+                        <ActivityIndicator color="#fff" size="small" />
+                    ) : (
+                        <Text style={styles.buttonText}>Create account</Text>
+                    )}
+                </TouchableOpacity>
+                
+                <TouchableOpacity style={styles.loginLinkContainer} onPress={() => router.push("/login")}>
+                    <Text style={styles.link}>Back to log in</Text>
+                </TouchableOpacity>
             </View>
         </View>
     );
@@ -162,40 +148,103 @@ export default function SignUpScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        padding: 20,
+        backgroundColor: Colors.background,
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 1000, // Make sure it's above any header
     },
-    label: {
-        alignSelf: 'flex-start',
-        marginLeft: '10%',
-        marginBottom: 5,
-        fontWeight: '500',
+    content: {
+        flex: 1,
+        paddingHorizontal: 25,
+        justifyContent: "center",
+        maxWidth: 360,
+        width: '100%',
+        alignSelf: 'center',
+    },
+    logoContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 30,
+        height: 100,
+    },
+    logoWrapper: {
+        width: 80,
+        height: 60,
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'relative',
+    },
+    logoLine1: {
+        position: 'absolute',
+        width: 60,
+        height: 10,
+        backgroundColor: Colors.accent,
+        borderRadius: 10,
+        transform: [{ rotate: '30deg' }, { translateY: -5 }],
+    },
+    logoLine2: {
+        position: 'absolute',
+        width: 60,
+        height: 10,
+        backgroundColor: Colors.accent,
+        borderRadius: 10,
+        transform: [{ rotate: '-20deg' }, { translateY: 10 }],
+    },
+    logoText: {
+        fontSize: 32,
+        fontWeight: 'bold',
+        color: Colors.text,
+        marginTop: 8,
+    },
+    title: {
+        fontSize: 30,
+        color: Colors.text,
+        textAlign: 'center',
+        marginBottom: 30,
     },
     input: {
-        borderWidth: 1,
-        borderColor: '#ccc',
-        padding: 10,
-        width: "80%",
+        backgroundColor: Colors.dark.background,
+        color: Colors.text,
+        paddingVertical: 16,
+        paddingHorizontal: 16,
+        borderRadius: 4,
+        marginBottom: 16,
+        fontSize: 16,
+    },
+    errorContainer: {
+        alignItems: 'center',
         marginBottom: 15,
-        borderRadius: 5,
+        width: '100%',
     },
-    requirementsContainer: {
-        width: '80%',
-        marginBottom: 20,
-        padding: 10,
-        backgroundColor: '#f5f5f5',
-        borderRadius: 5,
-    },
-    requirementsTitle: {
-        fontWeight: 'bold',
+    errorText: {
+        color: Colors.error,
+        textAlign: 'center',
         marginBottom: 5,
     },
-    requirementText: {
-        fontSize: 12,
-        marginBottom: 3,
+    button: {
+        backgroundColor: Colors.accent,
+        paddingVertical: 16,
+        borderRadius: 4,
+        alignItems: 'center',
+        marginTop: 8,
     },
-    backButton: {
-        marginTop: 10,
+    buttonDisabled: {
+        opacity: 0.7,
+    },
+    buttonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '500',
+    },
+    loginLinkContainer: {
+        alignItems: 'center',
+        marginTop: 16,
+    },
+    link: {
+        color: Colors.text,
+        fontSize: 14,
     },
 });

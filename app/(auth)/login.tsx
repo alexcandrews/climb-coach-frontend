@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, TextInput, Text, Alert, ActivityIndicator, StyleSheet, TouchableOpacity, StatusBar } from "react-native";
+import { View, TextInput, Text, Alert, ActivityIndicator, StyleSheet, TouchableOpacity, StatusBar, Image } from "react-native";
 import { useRouter } from "expo-router";
 import supabase, { saveSession } from "../../lib/supabase";
 import Colors from "../../constants/Colors";
@@ -99,7 +99,12 @@ export default function LoginScreen() {
         <View style={styles.container}>
             <View style={styles.content}>
                 <View style={styles.logoContainer}>
-                    <Text style={styles.logo}>2Beta</Text>
+                    <View style={styles.logoWrapper}>
+                        {/* Stylized curved line logo */}
+                        <View style={styles.logoLine1} />
+                        <View style={styles.logoLine2} />
+                    </View>
+                    <Text style={styles.logoText}>2Beta</Text>
                 </View>
                 <Text style={styles.title}>Login</Text>
                 
@@ -193,14 +198,37 @@ const styles = StyleSheet.create({
     logoContainer: {
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 16,
-        height: 60,
+        marginBottom: 30,
+        height: 100,
     },
-    logo: {
-        fontSize: 42,
+    logoWrapper: {
+        width: 80,
+        height: 60,
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'relative',
+    },
+    logoLine1: {
+        position: 'absolute',
+        width: 60,
+        height: 10,
+        backgroundColor: Colors.accent,
+        borderRadius: 10,
+        transform: [{ rotate: '30deg' }, { translateY: -5 }],
+    },
+    logoLine2: {
+        position: 'absolute',
+        width: 60,
+        height: 10,
+        backgroundColor: Colors.accent,
+        borderRadius: 10,
+        transform: [{ rotate: '-20deg' }, { translateY: 10 }],
+    },
+    logoText: {
+        fontSize: 32,
         fontWeight: 'bold',
-        color: Colors.accent,
-        textAlign: 'center',
+        color: Colors.text,
+        marginTop: 8,
     },
     title: {
         fontSize: 30,
