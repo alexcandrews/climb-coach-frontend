@@ -1,7 +1,17 @@
-import React, { useState } from "react";
-import { View, TextInput, Button, Text, Alert, ActivityIndicator, StyleSheet, TouchableOpacity } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, TextInput, Text, Alert, ActivityIndicator, StyleSheet, TouchableOpacity, StatusBar } from "react-native";
 import { useRouter } from "expo-router";
 import supabase, { saveSession } from "../../lib/supabase";
+
+// Brand color palette
+const colors = {
+  background: '#12181F',      // Very dark blue/black background
+  inputBg: '#1A2129',         // Dark input background
+  accent: '#3D9DB3',          // Blue accent color to match logo in screenshot
+  text: '#E6EFF4',            // Light text color
+  muted: '#8A8F98',           // Muted text color
+  error: '#f44336',           // Error color
+};
 
 export default function LoginScreen() {
     const router = useRouter();
@@ -9,6 +19,14 @@ export default function LoginScreen() {
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
+
+    // Hide status bar for this screen
+    useEffect(() => {
+        StatusBar.setHidden(true);
+        return () => {
+            StatusBar.setHidden(false);
+        };
+    }, []);
 
     const validateEmail = (email: string) => {
         return email.includes('@') && email.includes('.');
@@ -88,58 +106,75 @@ export default function LoginScreen() {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Welcome Back!</Text>
-            
-            <Text style={styles.label}>Email:</Text>
-            <TextInput 
-                value={email} 
-                onChangeText={(text) => {
-                    setEmail(text);
-                    setErrorMessage("");
-                }}
-                autoCapitalize="none"
-                keyboardType="email-address"
-                style={styles.input}
-                placeholder="your@email.com"
-            />
-
-            <Text style={styles.label}>Password:</Text>
-            <TextInput 
-                value={password} 
-                onChangeText={(text) => {
-                    setPassword(text);
-                    setErrorMessage("");
-                }}
-                secureTextEntry 
-                style={styles.input}
-                placeholder="Enter password"
-            />
-
-            {errorMessage ? (
-                <View style={styles.errorContainer}>
-                    <Text style={styles.errorText}>{errorMessage}</Text>
-                    {errorMessage.includes("Incorrect email or password") && (
-                        <TouchableOpacity onPress={handleForgotPassword}>
-                            <Text style={styles.helpLink}>Forgot Password?</Text>
-                        </TouchableOpacity>
-                    )}
-                    {errorMessage.includes("Email not verified") && (
-                        <TouchableOpacity onPress={handleResendVerification}>
-                            <Text style={styles.helpLink}>Resend Verification Email</Text>
-                        </TouchableOpacity>
-                    )}
+            <View style={styles.content}>
+                <View style={styles.logoContainer}>
+                    <Text style={styles.logo}>2Beta</Text>
                 </View>
-            ) : null}
+                <Text style={styles.title}>Login</Text>
+                
+                <TextInput 
+                    value={email} 
+                    onChangeText={(text) => {
+                        setEmail(text);
+                        setErrorMessage("");
+                    }}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    style={styles.input}
+                    placeholder="Email address"
+                    placeholderTextColor={colors.muted}
+                />
 
-            <Button 
-                title={loading ? "Logging in..." : "Login"} 
-                onPress={handleLogin} 
-                disabled={loading || !email.trim() || !password.trim()} 
-            />
-            
-            <View style={styles.signupContainer}>
-                <Text style={styles.signupText}>Don't have an account?</Text>
-                <Button title="Sign Up" onPress={() => router.push("/signup")} />
+                <TextInput 
+                    value={password} 
+                    onChangeText={(text) => {
+                        setPassword(text);
+                        setErrorMessage("");
+                    }}
+                    secureTextEntry 
+                    style={styles.input}
+                    placeholder="Password"
+                    placeholderTextColor={colors.muted}
+                />
+
+                {errorMessage ? (
+                    <View style={styles.errorContainer}>
+                        <Text style={styles.errorText}>{errorMessage}</Text>
+                        {errorMessage.includes("Incorrect email or password") && (
+                            <TouchableOpacity onPress={handleForgotPassword}>
+                                <Text style={styles.helpLink}>Forgot Password?</Text>
+                            </TouchableOpacity>
+                        )}
+                        {errorMessage.includes("Email not verified") && (
+                            <TouchableOpacity onPress={handleResendVerification}>
+                                <Text style={styles.helpLink}>Resend Verification Email</Text>
+                            </TouchableOpacity>
+                        )}
+                    </View>
+                ) : null}
+
+                <TouchableOpacity 
+                    style={[styles.button, (loading || !email.trim() || !password.trim()) && styles.buttonDisabled]} 
+                    onPress={handleLogin}
+                    disabled={loading || !email.trim() || !password.trim()}
+                >
+                    {loading ? (
+                        <ActivityIndicator color="#fff" size="small" />
+                    ) : (
+                        <Text style={styles.buttonText}>Log in</Text>
+                    )}
+                </TouchableOpacity>
+                
+                <TouchableOpacity style={styles.forgotPasswordContainer} onPress={handleForgotPassword}>
+                    <Text style={styles.link}>Forgot password?</Text>
+                </TouchableOpacity>
+
+                <View style={styles.bottomContainer}>
+                    <Text style={styles.signupText}>Don't have an account?</Text>
+                    <TouchableOpacity onPress={() => router.push("/signup")}>
+                        <Text style={styles.signupLink}>Sign up</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
         </View>
     );
@@ -148,50 +183,103 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        backgroundColor: colors.background,
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 1000, // Make sure it's above any header
+    },
+    content: {
+        flex: 1,
+        paddingHorizontal: 25,
         justifyContent: "center",
-        alignItems: "center",
-        padding: 20,
+        maxWidth: 360,
+        width: '100%',
+        alignSelf: 'center',
+    },
+    logoContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 16,
+        height: 60,
+    },
+    logo: {
+        fontSize: 42,
+        fontWeight: 'bold',
+        color: colors.accent,
+        textAlign: 'center',
     },
     title: {
-        fontSize: 24,
-        fontWeight: 'bold',
+        fontSize: 30,
+        color: colors.text,
+        textAlign: 'center',
         marginBottom: 30,
     },
-    label: {
-        alignSelf: 'flex-start',
-        marginLeft: '10%',
-        marginBottom: 5,
-        fontWeight: '500',
-    },
     input: {
-        borderWidth: 1,
-        borderColor: '#ccc',
-        padding: 10,
-        width: "80%",
-        marginBottom: 15,
-        borderRadius: 5,
+        backgroundColor: colors.inputBg,
+        color: colors.text,
+        paddingVertical: 16,
+        paddingHorizontal: 16,
+        borderRadius: 4,
+        marginBottom: 16,
+        fontSize: 16,
     },
     errorContainer: {
         alignItems: 'center',
         marginBottom: 15,
-        width: '80%',
+        width: '100%',
     },
     errorText: {
-        color: '#f44336',
+        color: colors.error,
         textAlign: 'center',
         marginBottom: 5,
     },
     helpLink: {
-        color: '#2196F3',
+        color: colors.accent,
         textDecorationLine: 'underline',
         marginTop: 5,
     },
-    signupContainer: {
-        marginTop: 20,
+    button: {
+        backgroundColor: colors.accent,
+        paddingVertical: 16,
+        borderRadius: 4,
         alignItems: 'center',
+        marginTop: 8,
+    },
+    buttonDisabled: {
+        opacity: 0.7,
+    },
+    buttonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '500',
+    },
+    forgotPasswordContainer: {
+        alignItems: 'center',
+        marginTop: 16,
+        marginBottom: 20,
+    },
+    link: {
+        color: colors.text,
+        fontSize: 14,
+    },
+    bottomContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 'auto',
+        paddingBottom: 40,
     },
     signupText: {
-        marginBottom: 10,
-        color: '#666',
+        color: colors.muted,
+        fontSize: 14,
     },
-});
+    signupLink: {
+        color: colors.text,
+        fontSize: 14,
+        fontWeight: '500',
+        marginLeft: 4,
+    }
+}); 
