@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-nat
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Video, ResizeMode } from 'expo-av';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors } from '@/constants/Colors';
+import Colors from '@/constants/Colors';
 import { getVideo, VideoDetails } from '@/lib/api/videos';
 
 export default function VideoScreen() {
@@ -46,11 +46,11 @@ export default function VideoScreen() {
           options={{
             headerTitle: '',
             headerShadowVisible: false,
-            headerStyle: { backgroundColor: Colors.background.default },
+            headerStyle: { backgroundColor: Colors.background },
           }}
         />
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.primary.main} />
+          <ActivityIndicator size="large" color={Colors.accent} />
           <Text style={styles.loadingText}>Loading video...</Text>
         </View>
       </SafeAreaView>
@@ -64,7 +64,7 @@ export default function VideoScreen() {
           options={{
             headerTitle: '',
             headerShadowVisible: false,
-            headerStyle: { backgroundColor: Colors.background.default },
+            headerStyle: { backgroundColor: Colors.background },
           }}
         />
         <View style={styles.errorContainer}>
@@ -80,7 +80,7 @@ export default function VideoScreen() {
         options={{
           headerTitle: '',
           headerShadowVisible: false,
-          headerStyle: { backgroundColor: Colors.background.default },
+          headerStyle: { backgroundColor: Colors.background },
         }}
       />
       
@@ -133,7 +133,7 @@ export default function VideoScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background.default,
+    backgroundColor: Colors.background,
   },
   loadingContainer: {
     flex: 1,
@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: Colors.text.secondary,
+    color: Colors.muted,
   },
   errorContainer: {
     flex: 1,
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: Colors.text.primary,
+    color: Colors.text,
     marginBottom: 4,
   },
   metaContainer: {
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
   },
   metaText: {
     fontSize: 16,
-    color: Colors.text.secondary,
+    color: Colors.muted,
   },
   videoContainer: {
     width: '100%',
@@ -192,12 +192,12 @@ const styles = StyleSheet.create({
   insightsTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: Colors.text.primary,
+    color: Colors.text,
     marginBottom: 16,
   },
   noInsightsText: {
     fontSize: 16,
-    color: Colors.text.secondary,
+    color: Colors.muted,
     fontStyle: 'italic',
     textAlign: 'center',
     paddingVertical: 16,
@@ -207,18 +207,18 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.secondary.dark,
+    borderBottomColor: Colors.muted,
   },
   timestamp: {
     width: 60,
     fontSize: 16,
-    color: Colors.primary.main,
+    color: Colors.accent,
     fontWeight: '500',
   },
   insightText: {
     flex: 1,
     fontSize: 16,
-    color: Colors.text.primary,
+    color: Colors.text,
     lineHeight: 24,
   },
 }); 

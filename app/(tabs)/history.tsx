@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, RefreshControl, Modal, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import Colors, { Spacing } from '@/constants/Colors';
+import Colors from '@/constants/Colors';
+import Spacing from '@/constants/Spacing';
 import { API_CONFIG } from '../config';
 import { useSession } from '@/lib/useSession';
 
@@ -159,7 +160,7 @@ export default function HistoryScreen() {
         return (
             <SafeAreaView style={styles.container}>
                 <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={Colors.primary.main} />
+                    <ActivityIndicator size="large" color={Colors.accent} />
                     <Text style={styles.loadingText}>Loading your climbing videos...</Text>
                 </View>
             </SafeAreaView>
@@ -223,7 +224,7 @@ export default function HistoryScreen() {
                         <RefreshControl
                             refreshing={refreshing}
                             onRefresh={onRefresh}
-                            colors={[Colors.primary.main]}
+                            colors={[Colors.accent]}
                         />
                     }
                 />
@@ -283,17 +284,17 @@ export default function HistoryScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: Colors.background.default,
+        backgroundColor: Colors.background,
     },
     header: {
         padding: Spacing.lg,
         borderBottomWidth: 1,
-        borderBottomColor: Colors.secondary.dark,
+        borderBottomColor: Colors.muted,
     },
     headerTitle: {
         fontSize: 20,
         fontWeight: '600',
-        color: Colors.text.primary,
+        color: Colors.text,
     },
     loadingContainer: {
         flex: 1,
@@ -304,7 +305,7 @@ const styles = StyleSheet.create({
     loadingText: {
         marginTop: Spacing.md,
         fontSize: 16,
-        color: Colors.text.secondary,
+        color: Colors.muted,
     },
     errorContainer: {
         flex: 1,
@@ -320,11 +321,11 @@ const styles = StyleSheet.create({
     },
     retryButton: {
         padding: Spacing.md,
-        backgroundColor: Colors.primary.main,
+        backgroundColor: Colors.accent,
         borderRadius: 8,
     },
     retryText: {
-        color: Colors.primary.contrast,
+        color: Colors.text,
         fontWeight: '600',
     },
     emptyContainer: {
@@ -336,14 +337,14 @@ const styles = StyleSheet.create({
     emptyText: {
         fontSize: 18,
         fontWeight: '600',
-        color: Colors.text.primary,
+        color: Colors.text,
         marginBottom: Spacing.md,
     },
     listContent: {
         padding: Spacing.md,
     },
     videoItem: {
-        backgroundColor: Colors.background.paper,
+        backgroundColor: Colors.dark.card,
         borderRadius: 8,
         padding: Spacing.lg,
         marginBottom: Spacing.md,
@@ -356,22 +357,22 @@ const styles = StyleSheet.create({
     videoName: {
         fontSize: 16,
         fontWeight: '600',
-        color: Colors.text.primary,
+        color: Colors.text,
         marginBottom: Spacing.sm,
     },
     videoDate: {
         fontSize: 14,
-        color: Colors.text.secondary,
+        color: Colors.muted,
     },
     subText: {
         fontSize: 16,
-        color: Colors.text.secondary,
+        color: Colors.muted,
         textAlign: 'center',
     },
     insightsContainer: {
         marginTop: Spacing.md,
         padding: Spacing.sm,
-        backgroundColor: Colors.background.default,
+        backgroundColor: Colors.background,
         borderRadius: 6,
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -379,17 +380,17 @@ const styles = StyleSheet.create({
     },
     insightsText: {
         fontSize: 14,
-        color: Colors.primary.main,
+        color: Colors.accent,
         fontWeight: '500',
     },
     viewInsightsButton: {
-        backgroundColor: Colors.primary.main,
+        backgroundColor: Colors.accent,
         paddingVertical: Spacing.xs,
         paddingHorizontal: Spacing.sm,
         borderRadius: 4,
     },
     viewInsightsText: {
-        color: Colors.primary.contrast,
+        color: Colors.text,
         fontSize: 12,
         fontWeight: '600',
     },
@@ -401,7 +402,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     modalContent: {
-        backgroundColor: Colors.background.paper,
+        backgroundColor: Colors.dark.card,
         borderRadius: 10,
         width: '90%',
         maxHeight: '80%',
@@ -419,18 +420,18 @@ const styles = StyleSheet.create({
         marginBottom: Spacing.md,
         paddingBottom: Spacing.sm,
         borderBottomWidth: 1,
-        borderBottomColor: Colors.secondary.main,
+        borderBottomColor: Colors.muted,
     },
     modalTitle: {
         fontSize: 18,
         fontWeight: '600',
-        color: Colors.text.primary,
+        color: Colors.text,
     },
     closeButton: {
         padding: Spacing.xs,
     },
     closeButtonText: {
-        color: Colors.primary.main,
+        color: Colors.accent,
         fontSize: 16,
         fontWeight: '500',
     },
@@ -438,7 +439,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     insightItem: {
-        backgroundColor: Colors.background.default,
+        backgroundColor: Colors.background,
         borderRadius: 8,
         padding: Spacing.md,
         marginBottom: Spacing.sm,
@@ -451,12 +452,12 @@ const styles = StyleSheet.create({
     timestamp: {
         fontSize: 14,
         fontWeight: '500',
-        color: Colors.primary.main,
+        color: Colors.accent,
     },
     insightType: {
         fontSize: 12,
-        color: Colors.primary.dark,
-        backgroundColor: Colors.primary.light,
+        color: Colors.text,
+        backgroundColor: Colors.accent,
         paddingHorizontal: Spacing.xs,
         paddingVertical: 2,
         borderRadius: 4,
@@ -464,7 +465,7 @@ const styles = StyleSheet.create({
     },
     insightText: {
         fontSize: 14,
-        color: Colors.text.primary,
+        color: Colors.text,
         lineHeight: 20,
     },
 }); 

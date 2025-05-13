@@ -4,7 +4,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import supabase, { logoutUser, getUserProfile, updateUserProfile } from '@/lib/supabase';
-import Colors, { Spacing, BorderRadius, Shadows } from '@/constants/Colors';
+import Colors from '@/constants/Colors';
+import Spacing from '@/constants/Spacing';
+import BorderRadius from '@/constants/BorderRadius';
+import Shadows from '@/constants/Shadows';
 
 const SKILL_LEVELS = ['Beginner', 'Intermediate', 'Advanced', 'Expert'];
 const CLIMBING_STYLES = [
@@ -145,7 +148,7 @@ export default function ProfileScreen() {
         return (
             <SafeAreaView style={styles.container}>
                 <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={Colors.primary.main} />
+                    <ActivityIndicator size="large" color={Colors.accent} />
                     <Text style={styles.loadingText}>Loading profile...</Text>
                 </View>
             </SafeAreaView>
@@ -159,12 +162,12 @@ export default function ProfileScreen() {
                     <Text style={styles.title}>Profile</Text>
                     <TouchableOpacity onPress={toggleEditMode} disabled={isSaving}>
                         {isSaving ? (
-                            <ActivityIndicator size="small" color={Colors.primary.main} />
+                            <ActivityIndicator size="small" color={Colors.accent} />
                         ) : (
                             <Ionicons 
                                 name={isEditing ? "checkmark" : "pencil"} 
                                 size={24} 
-                                color={Colors.primary.main} 
+                                color={Colors.accent} 
                             />
                         )}
                     </TouchableOpacity>
@@ -177,7 +180,7 @@ export default function ProfileScreen() {
                             value={name}
                             onChangeText={setName}
                             placeholder="Your Name"
-                            placeholderTextColor={Colors.text.disabled}
+                            placeholderTextColor={Colors.muted}
                         />
                     ) : (
                         <Text style={styles.nameText}>{name}</Text>
@@ -203,7 +206,7 @@ export default function ProfileScreen() {
                                     <Ionicons 
                                         name="remove" 
                                         size={20} 
-                                        color={yearsClimbing <= 0 ? Colors.text.disabled : Colors.primary.main} 
+                                        color={yearsClimbing <= 0 ? Colors.muted : Colors.accent} 
                                     />
                                 </TouchableOpacity>
                                 
@@ -215,7 +218,7 @@ export default function ProfileScreen() {
                                     <Ionicons 
                                         name="add" 
                                         size={20} 
-                                        color={yearsClimbing >= 50 ? Colors.text.disabled : Colors.primary.main} 
+                                        color={yearsClimbing >= 50 ? Colors.muted : Colors.accent} 
                                     />
                                 </TouchableOpacity>
                             </View>
@@ -295,7 +298,7 @@ export default function ProfileScreen() {
                                 value={tempGoals}
                                 onChangeText={setTempGoals}
                                 placeholder="improve technique&#10;send a V8"
-                                placeholderTextColor={Colors.text.disabled}
+                                placeholderTextColor={Colors.muted}
                                 multiline
                             />
                         </View>
@@ -318,7 +321,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: Colors.background.default,
+        backgroundColor: Colors.background,
     },
     content: {
         flex: 1,
@@ -331,7 +334,7 @@ const styles = StyleSheet.create({
     },
     loadingText: {
         marginTop: Spacing.md,
-        color: Colors.text.secondary,
+        color: Colors.muted,
         fontSize: 16,
     },
     titleRow: {
@@ -343,7 +346,7 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: Colors.text.primary,
+        color: Colors.text,
     },
     profileHeader: {
         marginBottom: Spacing.lg,
@@ -351,24 +354,24 @@ const styles = StyleSheet.create({
     nameText: {
         fontSize: 22,
         fontWeight: '600',
-        color: Colors.text.primary,
+        color: Colors.text,
         marginBottom: Spacing.xs,
     },
     nameInput: {
         fontSize: 22,
         fontWeight: '600',
-        color: Colors.text.primary,
+        color: Colors.text,
         marginBottom: Spacing.xs,
         borderBottomWidth: 1,
-        borderBottomColor: Colors.primary.main,
+        borderBottomColor: Colors.accent,
         paddingVertical: Spacing.xs,
     },
     emailText: {
         fontSize: 16,
-        color: Colors.text.secondary,
+        color: Colors.muted,
     },
     statsContainer: {
-        backgroundColor: Colors.background.paper,
+        backgroundColor: Colors.dark.card,
         borderRadius: BorderRadius.lg,
         padding: Spacing.md,
         marginBottom: Spacing.md,
@@ -383,12 +386,12 @@ const styles = StyleSheet.create({
     statValue: {
         fontSize: 26,
         fontWeight: 'bold',
-        color: Colors.primary.main,
+        color: Colors.accent,
         marginBottom: Spacing.xs,
     },
     statLabel: {
         fontSize: 14,
-        color: Colors.text.secondary,
+        color: Colors.muted,
     },
     yearsStepper: {
         flexDirection: 'row',
@@ -400,14 +403,14 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: Colors.background.default,
+        backgroundColor: Colors.background,
         justifyContent: 'center',
         alignItems: 'center',
         marginHorizontal: Spacing.xs,
         ...Shadows.sm,
     },
     section: {
-        backgroundColor: Colors.background.paper,
+        backgroundColor: Colors.dark.card,
         padding: Spacing.lg,
         borderRadius: BorderRadius.lg,
         marginBottom: Spacing.md,
@@ -415,12 +418,12 @@ const styles = StyleSheet.create({
     },
     sectionLabel: {
         fontSize: 14,
-        color: Colors.text.secondary,
+        color: Colors.muted,
         marginBottom: Spacing.xs,
     },
     sectionValue: {
         fontSize: 18,
-        color: Colors.text.primary,
+        color: Colors.text,
     },
     skillLevelsContainer: {
         flexDirection: 'row',
@@ -434,31 +437,31 @@ const styles = StyleSheet.create({
         borderRadius: BorderRadius.md,
         marginBottom: Spacing.xs,
         borderWidth: 1,
-        borderColor: Colors.text.disabled,
-        backgroundColor: Colors.background.default,
+        borderColor: Colors.muted,
+        backgroundColor: Colors.background,
         minWidth: '48%',
         alignItems: 'center',
     },
     skillLevelButtonSelected: {
-        backgroundColor: Colors.primary.main,
-        borderColor: Colors.primary.main,
+        backgroundColor: Colors.accent,
+        borderColor: Colors.accent,
     },
     skillLevelButtonText: {
-        color: Colors.text.primary,
+        color: Colors.text,
         fontWeight: '500',
     },
     skillLevelButtonTextSelected: {
-        color: Colors.primary.contrast,
+        color: Colors.text,
     },
     goalsEditContainer: {
         marginTop: Spacing.xs,
     },
     goalsInput: {
         fontSize: 18,
-        color: Colors.text.primary,
+        color: Colors.text,
         padding: Spacing.sm,
         borderWidth: 1,
-        borderColor: Colors.text.disabled,
+        borderColor: Colors.muted,
         borderRadius: BorderRadius.md,
         minHeight: 80,
     },
@@ -471,7 +474,7 @@ const styles = StyleSheet.create({
         ...Shadows.sm,
     },
     logoutText: {
-        color: Colors.primary.contrast,
+        color: Colors.text,
         fontSize: 16,
         fontWeight: '500',
     },

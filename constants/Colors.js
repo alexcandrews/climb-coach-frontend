@@ -1,5 +1,5 @@
 // Brand colors from the tailwind configuration
-const Colors = {
+export default {
   // Primary brand colors
   background: '#22303C', // Deep Navy
   accent: '#3E6E68',     // Forest Teal
@@ -25,6 +25,4 @@ const Colors = {
     text: '#F9FAFB',
     border: '#374151',
   },
-};
-
-export default Colors; 
+}; 

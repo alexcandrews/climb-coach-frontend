@@ -6,6 +6,22 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 
+// Import the Google fonts
+import {
+  SpaceGrotesk_400Regular,
+  SpaceGrotesk_500Medium,
+  SpaceGrotesk_700Bold,
+} from '@expo-google-fonts/space-grotesk';
+
+import {
+  PlusJakartaSans_400Regular,
+  PlusJakartaSans_500Medium,
+  PlusJakartaSans_600SemiBold,
+  PlusJakartaSans_700Bold,
+} from '@expo-google-fonts/plus-jakarta-sans';
+
+
+
 import { useColorScheme } from '@/components/useColorScheme';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
@@ -15,7 +31,7 @@ export { ErrorBoundary };
 // In newer versions of expo-router, ErrorBoundary is no longer exported directly
 // The error handling is now built into the router by default
 export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present.
+  // Ensure that reloading on /modal/index works
   initialRouteName: '(tabs)',
 };
 
@@ -26,6 +42,13 @@ export default function RootLayout() {
   const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
     ...FontAwesome.font,
+    SpaceGrotesk_400Regular,
+    SpaceGrotesk_500Medium,
+    SpaceGrotesk_700Bold,
+    PlusJakartaSans_400Regular,
+    PlusJakartaSans_500Medium,
+    PlusJakartaSans_600SemiBold,
+    PlusJakartaSans_700Bold,
   });
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.

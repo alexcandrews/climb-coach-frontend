@@ -3,7 +3,7 @@ import { StyleSheet, View, Text, FlatList, Image, TouchableOpacity, ActivityIndi
 import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import useVideos from '../../lib/api/hooks/useVideos';
-import { Colors } from '@/constants/Colors';
+import Colors from '@/constants/Colors';
 
 export default function HistoryScreenWithGeneratedApi() {
   const router = useRouter();
@@ -19,7 +19,7 @@ export default function HistoryScreenWithGeneratedApi() {
           }}
         />
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={Colors.primary.main} />
+          <ActivityIndicator size="large" color={Colors.accent} />
           <Text style={styles.loadingText}>Loading videos...</Text>
         </View>
       </View>
@@ -87,7 +87,7 @@ export default function HistoryScreenWithGeneratedApi() {
                 <Image source={{ uri: item.thumbnail_url }} style={styles.thumbnail} />
               ) : (
                 <View style={styles.placeholderThumbnail}>
-                  <Ionicons name="videocam" size={36} color={Colors.primary.light} />
+                  <Ionicons name="videocam" size={36} color={Colors.text} />
                 </View>
               )}
             </View>
@@ -129,7 +129,7 @@ export default function HistoryScreenWithGeneratedApi() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background.default,
+    backgroundColor: Colors.background,
   },
   centerContainer: {
     flex: 1,
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: Colors.text.secondary,
+    color: Colors.muted,
   },
   errorText: {
     fontSize: 16,
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   retryButton: {
-    backgroundColor: Colors.primary.main,
+    backgroundColor: Colors.accent,
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
@@ -162,12 +162,12 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: Colors.text.primary,
+    color: Colors.text,
     marginBottom: 8,
   },
   emptySubText: {
     fontSize: 16,
-    color: Colors.text.secondary,
+    color: Colors.muted,
     textAlign: 'center',
     maxWidth: '80%',
   },
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
   },
   videoCard: {
     flexDirection: 'row',
-    backgroundColor: Colors.background.paper,
+    backgroundColor: Colors.dark.card,
     borderRadius: 12,
     marginBottom: 16,
     overflow: 'hidden',
@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
   placeholderThumbnail: {
     width: '100%',
     height: '100%',
-    backgroundColor: Colors.primary.dark,
+    backgroundColor: Colors.accent,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -210,16 +210,16 @@ const styles = StyleSheet.create({
   videoTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: Colors.text.primary,
+    color: Colors.text,
     marginBottom: 4,
   },
   videoDate: {
     fontSize: 14,
-    color: Colors.text.secondary,
+    color: Colors.muted,
     marginBottom: 8,
   },
   insightsButton: {
-    backgroundColor: Colors.primary.light,
+    backgroundColor: Colors.accent,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,

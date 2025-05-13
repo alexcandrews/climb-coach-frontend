@@ -4,7 +4,7 @@ import { useRouter, usePathname } from 'expo-router';
 import supabase from '../../lib/supabase';
 
 // List of paths that don't require authentication
-const PUBLIC_PATHS = ['/login', '/signup', 'login', 'signup'];
+const PUBLIC_PATHS = ['/login', '/signup', 'login', 'signup', 'index', '/', '/index', '/(tabs)'];
 
 export default function RequireAuth({ children }: { children: React.ReactNode }) {
     const [isLoading, setIsLoading] = useState(true);
