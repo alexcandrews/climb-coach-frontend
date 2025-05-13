@@ -2,16 +2,7 @@ import React, { useState, useEffect } from "react";
 import { View, TextInput, Text, Alert, ActivityIndicator, StyleSheet, TouchableOpacity, StatusBar } from "react-native";
 import { useRouter } from "expo-router";
 import supabase, { saveSession } from "../../lib/supabase";
-
-// Brand color palette
-const colors = {
-  background: '#12181F',      // Very dark blue/black background
-  inputBg: '#1A2129',         // Dark input background
-  accent: '#3D9DB3',          // Blue accent color to match logo in screenshot
-  text: '#E6EFF4',            // Light text color
-  muted: '#8A8F98',           // Muted text color
-  error: '#f44336',           // Error color
-};
+import Colors from "../../constants/Colors";
 
 export default function LoginScreen() {
     const router = useRouter();
@@ -122,7 +113,7 @@ export default function LoginScreen() {
                     keyboardType="email-address"
                     style={styles.input}
                     placeholder="Email address"
-                    placeholderTextColor={colors.muted}
+                    placeholderTextColor={Colors.muted}
                 />
 
                 <TextInput 
@@ -134,7 +125,7 @@ export default function LoginScreen() {
                     secureTextEntry 
                     style={styles.input}
                     placeholder="Password"
-                    placeholderTextColor={colors.muted}
+                    placeholderTextColor={Colors.muted}
                 />
 
                 {errorMessage ? (
@@ -183,7 +174,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background,
+        backgroundColor: Colors.background,
         position: 'absolute',
         top: 0,
         left: 0,
@@ -208,18 +199,18 @@ const styles = StyleSheet.create({
     logo: {
         fontSize: 42,
         fontWeight: 'bold',
-        color: colors.accent,
+        color: Colors.accent,
         textAlign: 'center',
     },
     title: {
         fontSize: 30,
-        color: colors.text,
+        color: Colors.text,
         textAlign: 'center',
         marginBottom: 30,
     },
     input: {
-        backgroundColor: colors.inputBg,
-        color: colors.text,
+        backgroundColor: Colors.dark.background,
+        color: Colors.text,
         paddingVertical: 16,
         paddingHorizontal: 16,
         borderRadius: 4,
@@ -232,17 +223,17 @@ const styles = StyleSheet.create({
         width: '100%',
     },
     errorText: {
-        color: colors.error,
+        color: Colors.error,
         textAlign: 'center',
         marginBottom: 5,
     },
     helpLink: {
-        color: colors.accent,
+        color: Colors.accent,
         textDecorationLine: 'underline',
         marginTop: 5,
     },
     button: {
-        backgroundColor: colors.accent,
+        backgroundColor: Colors.accent,
         paddingVertical: 16,
         borderRadius: 4,
         alignItems: 'center',
@@ -262,7 +253,7 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     link: {
-        color: colors.text,
+        color: Colors.text,
         fontSize: 14,
     },
     bottomContainer: {
@@ -273,11 +264,11 @@ const styles = StyleSheet.create({
         paddingBottom: 40,
     },
     signupText: {
-        color: colors.muted,
+        color: Colors.muted,
         fontSize: 14,
     },
     signupLink: {
-        color: colors.text,
+        color: Colors.text,
         fontSize: 14,
         fontWeight: '500',
         marginLeft: 4,
