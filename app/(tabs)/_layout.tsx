@@ -35,13 +35,6 @@ export default function TabLayout() {
           },
         }}>
         <Tabs.Screen
-          name="index"
-          options={{
-            title: 'Home',
-            tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
-          }}
-        />
-        <Tabs.Screen
           name="upload"
           options={{
             title: 'Upload',
@@ -61,13 +54,6 @@ export default function TabLayout() {
           options={{
             title: 'Profile',
             tabBarIcon: ({ color }) => <TabBarIcon name="person" color={color} />,
-          }}
-        />
-        <Tabs.Screen
-          name="tailwind"
-          options={{
-            title: 'Tailwind',
-            tabBarIcon: ({ color }) => <TabBarIcon name="brush" color={color} />,
           }}
         />
       </Tabs>
