@@ -26,12 +26,13 @@ export default function TabLayout() {
           tabBarInactiveTintColor: Colors.muted,
           tabBarStyle: {
             backgroundColor: Colors.background,
-            borderTopColor: 'rgba(255, 255, 255, 0.1)',
           },
           headerStyle: {
             backgroundColor: Colors.background,
           },
-          headerTintColor: Colors.text,
+          headerTitleStyle: {
+            color: Colors.text,
+          },
         }}>
         <Tabs.Screen
           name="index"
@@ -59,6 +60,13 @@ export default function TabLayout() {
           options={{
             title: 'Profile',
             tabBarIcon: ({ color }) => <TabBarIcon name="person" color={color} />,
+          }}
+        />
+        <Tabs.Screen
+          name="tailwind"
+          options={{
+            title: 'Tailwind',
+            tabBarIcon: ({ color }) => <TabBarIcon name="brush" color={color} />,
           }}
         />
       </Tabs>

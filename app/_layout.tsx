@@ -6,6 +6,9 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 
+// Import global styles for Tailwind CSS
+import '../global.css';
+
 // Import the Google fonts
 import {
   SpaceGrotesk_400Regular,
@@ -19,8 +22,6 @@ import {
   PlusJakartaSans_600SemiBold,
   PlusJakartaSans_700Bold,
 } from '@expo-google-fonts/plus-jakarta-sans';
-
-
 
 import { useColorScheme } from '@/components/useColorScheme';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
