@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Alert, StyleSheet, ScrollView, TouchableOpacity, Text, StatusBar, Image } from 'react-native';
+import { View, Alert, StyleSheet, ScrollView, TouchableOpacity, Text, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Video, ResizeMode } from 'expo-av';
 import * as ImagePicker from "expo-image-picker";
@@ -7,6 +7,7 @@ import { FontAwesome } from '@expo/vector-icons';
 import { DEV_MODE } from '../config';
 import { useRouter } from 'expo-router';
 import Colors from "../../constants/Colors";
+import LogoHeader from "@/components/LogoHeader";
 
 // Import video services
 import { 
@@ -68,13 +69,7 @@ export default function UploadScreen() {
     return (
         <View style={styles.container}>
             <View style={styles.content}>
-                <View style={styles.logoContainer}>
-                    <Image 
-                        source={require('../../assets/images/logos/logo.png')}
-                        style={styles.logo}
-                        resizeMode="contain"
-                    />
-                </View>
+                <LogoHeader marginBottom={60} />
                 <Text style={styles.title}>Upload Climb</Text>
                 
                 <TouchableOpacity 
@@ -112,16 +107,6 @@ const styles = StyleSheet.create({
         maxWidth: 360,
         width: '100%',
         alignSelf: 'center',
-    },
-    logoContainer: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 60,
-        height: 120,
-    },
-    logo: {
-        width: 120,
-        height: 100,
     },
     title: {
         fontSize: 30,

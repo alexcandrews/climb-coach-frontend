@@ -1,27 +1,20 @@
 import React, { useState, useEffect } from "react";
-import { View, TextInput, Text, Alert, ActivityIndicator, StyleSheet, TouchableOpacity, StatusBar, Image } from "react-native";
+import { View, TextInput, Text, Alert, ActivityIndicator, StyleSheet, TouchableOpacity, StatusBar } from "react-native";
 import { useRouter } from "expo-router";
-import supabase, { saveSession } from "../../lib/supabase";
+import supabase from "../../lib/supabase";
 import Colors from "../../constants/Colors";
+import LogoHeader from "@/components/LogoHeader";
 
 export default function SignUpScreen() {
-    const router = useRouter();
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
-
-    // Hide status bar for this screen
-    useEffect(() => {
-        StatusBar.setHidden(true);
-        return () => {
-            StatusBar.setHidden(false);
-        };
-    }, []);
+    const router = useRouter();
 
     const validateEmail = (email: string) => {
-        return email.includes('@') && email.includes('.');
+        return email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
     };
 
     const handleSignUp = async () => {
@@ -73,13 +66,7 @@ export default function SignUpScreen() {
     return (
         <View style={styles.container}>
             <View style={styles.content}>
-                <View style={styles.logoContainer}>
-                    <Image 
-                        source={require('../../assets/images/logos/logo.png')}
-                        style={styles.logo}
-                        resizeMode="contain"
-                    />
-                </View>
+                <LogoHeader />
                 <Text style={styles.title}>Sign Up</Text>
                 
                 <TextInput 
@@ -162,16 +149,6 @@ const styles = StyleSheet.create({
         maxWidth: 360,
         width: '100%',
         alignSelf: 'center',
-    },
-    logoContainer: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 30,
-        height: 120,
-    },
-    logo: {
-        width: 120,
-        height: 100,
     },
     title: {
         fontSize: 30,

@@ -8,6 +8,7 @@ import Colors from '@/constants/Colors';
 import Spacing from '@/constants/Spacing';
 import BorderRadius from '@/constants/BorderRadius';
 import Shadows from '@/constants/Shadows';
+import LogoHeader from '@/components/LogoHeader';
 
 const SKILL_LEVELS = ['Beginner', 'Intermediate', 'Advanced', 'Expert'];
 const CLIMBING_STYLES = [
@@ -158,9 +159,29 @@ export default function ProfileScreen() {
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView style={styles.content}>
-                <View style={styles.titleRow}>
-                    <Text style={styles.title}>Profile</Text>
-                    <TouchableOpacity onPress={toggleEditMode} disabled={isSaving}>
+                <LogoHeader marginBottom={10} />
+                
+                <View style={styles.profileHeader}>
+                    <View style={styles.profileHeaderContent}>
+                        {isEditing ? (
+                            <TextInput
+                                style={styles.nameInput}
+                                value={name}
+                                onChangeText={setName}
+                                placeholder="Your Name"
+                                placeholderTextColor={Colors.muted}
+                            />
+                        ) : (
+                            <Text style={styles.nameText}>{name}</Text>
+                        )}
+                        <Text style={styles.emailText}>{email}</Text>
+                    </View>
+                    
+                    <TouchableOpacity 
+                        style={styles.editButton} 
+                        onPress={toggleEditMode} 
+                        disabled={isSaving}
+                    >
                         {isSaving ? (
                             <ActivityIndicator size="small" color={Colors.accent} />
                         ) : (
@@ -171,21 +192,6 @@ export default function ProfileScreen() {
                             />
                         )}
                     </TouchableOpacity>
-                </View>
-                
-                <View style={styles.profileHeader}>
-                    {isEditing ? (
-                        <TextInput
-                            style={styles.nameInput}
-                            value={name}
-                            onChangeText={setName}
-                            placeholder="Your Name"
-                            placeholderTextColor={Colors.muted}
-                        />
-                    ) : (
-                        <Text style={styles.nameText}>{name}</Text>
-                    )}
-                    <Text style={styles.emailText}>{email}</Text>
                 </View>
                 
                 <TouchableOpacity 
@@ -254,7 +260,28 @@ export default function ProfileScreen() {
                             ))}
                         </View>
                     ) : (
-                        <Text style={styles.sectionValue}>{skillLevel}</Text>
+                        <View style={styles.detailBox}>
+                            <Text style={styles.detailText}>{skillLevel}</Text>
+                        </View>
+                    )}
+                </View>
+                
+                <View style={styles.section}>
+                    <Text style={styles.sectionLabel}>Primary Goals</Text>
+                    
+                    {isEditing ? (
+                        <TextInput
+                            style={styles.goalsInput}
+                            value={tempGoals}
+                            onChangeText={setTempGoals}
+                            placeholder="What do you want to achieve with your climbing?"
+                            placeholderTextColor={Colors.muted}
+                            multiline
+                        />
+                    ) : (
+                        <View style={styles.detailBox}>
+                            <Text style={styles.detailText}>{primaryGoals}</Text>
+                        </View>
                     )}
                 </View>
                 
@@ -262,20 +289,20 @@ export default function ProfileScreen() {
                     <Text style={styles.sectionLabel}>Climbing Styles</Text>
                     
                     {isEditing ? (
-                        <View style={styles.skillLevelsContainer}>
+                        <View style={styles.climbingStylesContainer}>
                             {CLIMBING_STYLES.map((style) => (
                                 <TouchableOpacity
                                     key={style}
                                     style={[
-                                        styles.skillLevelButton,
-                                        climbingStyles.includes(style) && styles.skillLevelButtonSelected
+                                        styles.climbingStyleButton,
+                                        climbingStyles.includes(style) && styles.climbingStyleButtonSelected
                                     ]}
                                     onPress={() => toggleClimbingStyle(style)}
                                 >
                                     <Text 
                                         style={[
-                                            styles.skillLevelButtonText,
-                                            climbingStyles.includes(style) && styles.skillLevelButtonTextSelected
+                                            styles.climbingStyleButtonText,
+                                            climbingStyles.includes(style) && styles.climbingStyleButtonTextSelected
                                         ]}
                                     >
                                         {style}
@@ -284,34 +311,22 @@ export default function ProfileScreen() {
                             ))}
                         </View>
                     ) : (
-                        <Text style={styles.sectionValue}>{climbingStyles.join(', ')}</Text>
-                    )}
-                </View>
-                
-                <View style={styles.section}>
-                    <Text style={styles.sectionLabel}>Primary Goals</Text>
-                    
-                    {isEditing ? (
-                        <View style={styles.goalsEditContainer}>
-                            <TextInput
-                                style={styles.goalsInput}
-                                value={tempGoals}
-                                onChangeText={setTempGoals}
-                                placeholder="improve technique&#10;send a V8"
-                                placeholderTextColor={Colors.muted}
-                                multiline
-                            />
+                        <View style={styles.detailBox}>
+                            {climbingStyles.length > 0 ? (
+                                climbingStyles.map((style, index) => (
+                                    <View key={style} style={styles.climbingStyleChip}>
+                                        <Text style={styles.climbingStyleChipText}>{style}</Text>
+                                    </View>
+                                ))
+                            ) : (
+                                <Text style={styles.emptyText}>No climbing styles selected</Text>
+                            )}
                         </View>
-                    ) : (
-                        <Text style={styles.sectionValue}>{primaryGoals}</Text>
                     )}
                 </View>
                 
-                <TouchableOpacity 
-                    style={styles.logoutButton} 
-                    onPress={handleSignOut}
-                >
-                    <Text style={styles.logoutText}>Log Out</Text>
+                <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
+                    <Text style={styles.signOutButtonText}>Sign Out</Text>
                 </TouchableOpacity>
             </ScrollView>
         </SafeAreaView>
@@ -326,6 +341,7 @@ const styles = StyleSheet.create({
     content: {
         flex: 1,
         padding: Spacing.md,
+        paddingTop: 80,
     },
     loadingContainer: {
         flex: 1,
@@ -337,19 +353,18 @@ const styles = StyleSheet.create({
         color: Colors.muted,
         fontSize: 16,
     },
-    titleRow: {
+    profileHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         marginBottom: Spacing.lg,
     },
-    title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: Colors.text,
+    profileHeaderContent: {
+        flex: 1,
     },
-    profileHeader: {
-        marginBottom: Spacing.lg,
+    editButton: {
+        paddingTop: 4,
+        paddingLeft: 10,
     },
     nameText: {
         fontSize: 22,
@@ -474,6 +489,72 @@ const styles = StyleSheet.create({
         ...Shadows.sm,
     },
     logoutText: {
+        color: Colors.text,
+        fontSize: 16,
+        fontWeight: '500',
+    },
+    detailBox: {
+        padding: Spacing.md,
+        backgroundColor: Colors.dark.card,
+        borderRadius: BorderRadius.md,
+        marginBottom: Spacing.md,
+        ...Shadows.sm,
+    },
+    detailText: {
+        fontSize: 18,
+        color: Colors.text,
+    },
+    climbingStylesContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        marginTop: Spacing.sm,
+        justifyContent: 'space-between',
+    },
+    climbingStyleButton: {
+        paddingVertical: Spacing.sm,
+        paddingHorizontal: Spacing.md,
+        borderRadius: BorderRadius.md,
+        marginBottom: Spacing.xs,
+        borderWidth: 1,
+        borderColor: Colors.muted,
+        backgroundColor: Colors.background,
+        minWidth: '48%',
+        alignItems: 'center',
+    },
+    climbingStyleButtonSelected: {
+        backgroundColor: Colors.accent,
+        borderColor: Colors.accent,
+    },
+    climbingStyleButtonText: {
+        color: Colors.text,
+        fontWeight: '500',
+    },
+    climbingStyleButtonTextSelected: {
+        color: Colors.text,
+    },
+    climbingStyleChip: {
+        padding: Spacing.xs,
+        backgroundColor: Colors.accent,
+        borderRadius: BorderRadius.md,
+        marginRight: Spacing.xs,
+    },
+    climbingStyleChipText: {
+        color: Colors.text,
+        fontWeight: '500',
+    },
+    emptyText: {
+        color: Colors.muted,
+        fontSize: 16,
+    },
+    signOutButton: {
+        backgroundColor: Colors.error,
+        padding: Spacing.md,
+        marginTop: Spacing.xl,
+        borderRadius: BorderRadius.md,
+        alignItems: 'center',
+        ...Shadows.sm,
+    },
+    signOutButtonText: {
         color: Colors.text,
         fontSize: 16,
         fontWeight: '500',

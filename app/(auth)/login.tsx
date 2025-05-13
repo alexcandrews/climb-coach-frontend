@@ -1,87 +1,99 @@
 import React, { useState, useEffect } from "react";
-import { View, TextInput, Text, Alert, ActivityIndicator, StyleSheet, TouchableOpacity, StatusBar, Image } from "react-native";
+import { View, TextInput, Text, Alert, ActivityIndicator, StyleSheet, TouchableOpacity, StatusBar } from "react-native";
 import { useRouter } from "expo-router";
 import supabase, { saveSession } from "../../lib/supabase";
 import Colors from "../../constants/Colors";
+import LogoHeader from "@/components/LogoHeader";
 
 export default function LoginScreen() {
-    const router = useRouter();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
-
-    // Hide status bar for this screen
-    useEffect(() => {
-        StatusBar.setHidden(true);
-        return () => {
-            StatusBar.setHidden(false);
-        };
-    }, []);
+    const router = useRouter();
 
     const validateEmail = (email: string) => {
-        return email.includes('@') && email.includes('.');
+        // Simple email validation
+        return email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
     };
 
     const handleForgotPassword = async () => {
+        if (!email.trim() || !validateEmail(email)) {
+            setErrorMessage("Please enter a valid email address.");
+            return;
+        }
+
+        setLoading(true);
         try {
-            const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: window.location.origin + '/reset-password',
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: `${window.location.origin}/reset-password`,
             });
-            if (resetError) throw resetError;
+
+            if (error) throw error;
             Alert.alert(
                 "Password Reset Email Sent",
-                "Please check your email for password reset instructions.",
-                [{ text: "OK" }]
+                "Check your email for a password reset link."
             );
         } catch (err) {
-            setErrorMessage("Failed to send password reset email. Please try again.");
+            console.error("Password reset error:", err);
+            setErrorMessage("Failed to send password reset email. Please try again later.");
+        } finally {
+            setLoading(false);
         }
     };
 
     const handleResendVerification = async () => {
+        if (!email.trim() || !validateEmail(email)) {
+            setErrorMessage("Please enter a valid email address.");
+            return;
+        }
+
+        setLoading(true);
         try {
-            const { error: resendError } = await supabase.auth.resend({
+            // Make sure to adapt this based on the actual Supabase API
+            await supabase.auth.resend({
                 type: 'signup',
-                email: email,
+                email,
             });
-            if (resendError) throw resendError;
-            Alert.alert("Success", "Verification email resent. Please check your inbox.");
+            Alert.alert("Verification Email Sent", "Please check your email for the verification link.");
         } catch (err) {
-            setErrorMessage("Failed to resend verification email. Please try again.");
+            console.error("Resend verification error:", err);
+            setErrorMessage("Failed to resend verification email. Please try again later.");
+        } finally {
+            setLoading(false);
         }
     };
 
     const handleLogin = async () => {
+        // Basic validation
+        if (!email.trim() || !password.trim()) {
+            setErrorMessage("Please enter both email and password.");
+            return;
+        }
+
+        if (!validateEmail(email)) {
+            setErrorMessage("Please enter a valid email address.");
+            return;
+        }
+
+        setLoading(true);
         try {
-            setErrorMessage("");
-
-            // Basic validation
-            if (!email.trim() || !password.trim()) {
-                setErrorMessage("Please enter both email and password");
-                return;
-            }
-
-            if (!validateEmail(email)) {
-                setErrorMessage("Please enter a valid email address");
-                return;
-            }
-
-            setLoading(true);
-            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email: email.trim(),
+                password,
+            });
 
             if (error) {
-                if (error.message.includes('Invalid login credentials')) {
-                    setErrorMessage("Incorrect email or password");
-                } else if (error.message.includes('Email not confirmed')) {
-                    setErrorMessage("Email not verified. Please verify your email to continue.");
+                if (error.message.includes("Email not confirmed")) {
+                    setErrorMessage("Email not verified. Please check your inbox for a verification link.");
                 } else {
-                    setErrorMessage(error.message);
+                    setErrorMessage("Incorrect email or password. Please try again.");
                 }
                 return;
             }
 
             if (data?.session) {
+                // Save session locally
                 await saveSession(data.session);
                 router.replace("/upload");
             } else {
@@ -98,13 +110,7 @@ export default function LoginScreen() {
     return (
         <View style={styles.container}>
             <View style={styles.content}>
-                <View style={styles.logoContainer}>
-                    <Image 
-                        source={require('../../assets/images/logos/logo.png')}
-                        style={styles.logo}
-                        resizeMode="contain"
-                    />
-                </View>
+                <LogoHeader />
                 <Text style={styles.title}>Login</Text>
                 
                 <TextInput 
@@ -193,16 +199,6 @@ const styles = StyleSheet.create({
         maxWidth: 360,
         width: '100%',
         alignSelf: 'center',
-    },
-    logoContainer: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 30,
-        height: 120,
-    },
-    logo: {
-        width: 120,
-        height: 100,
     },
     title: {
         fontSize: 30,
