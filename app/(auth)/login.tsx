@@ -99,12 +99,11 @@ export default function LoginScreen() {
         <View style={styles.container}>
             <View style={styles.content}>
                 <View style={styles.logoContainer}>
-                    <View style={styles.logoWrapper}>
-                        {/* Stylized curved line logo */}
-                        <View style={styles.logoLine1} />
-                        <View style={styles.logoLine2} />
-                    </View>
-                    <Text style={styles.logoText}>2Beta</Text>
+                    <Image 
+                        source={require('../../assets/images/logos/logo.png')}
+                        style={styles.logo}
+                        resizeMode="contain"
+                    />
                 </View>
                 <Text style={styles.title}>Login</Text>
                 
@@ -199,42 +198,18 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 30,
+        height: 120,
+    },
+    logo: {
+        width: 120,
         height: 100,
-    },
-    logoWrapper: {
-        width: 80,
-        height: 60,
-        alignItems: 'center',
-        justifyContent: 'center',
-        position: 'relative',
-    },
-    logoLine1: {
-        position: 'absolute',
-        width: 60,
-        height: 10,
-        backgroundColor: Colors.accent,
-        borderRadius: 10,
-        transform: [{ rotate: '30deg' }, { translateY: -5 }],
-    },
-    logoLine2: {
-        position: 'absolute',
-        width: 60,
-        height: 10,
-        backgroundColor: Colors.accent,
-        borderRadius: 10,
-        transform: [{ rotate: '-20deg' }, { translateY: 10 }],
-    },
-    logoText: {
-        fontSize: 32,
-        fontWeight: 'bold',
-        color: Colors.text,
-        marginTop: 8,
     },
     title: {
         fontSize: 30,
         color: Colors.text,
         textAlign: 'center',
         marginBottom: 30,
+        fontFamily: 'SpaceGrotesk_700Bold',
     },
     input: {
         backgroundColor: Colors.dark.background,
@@ -244,6 +219,7 @@ const styles = StyleSheet.create({
         borderRadius: 4,
         marginBottom: 16,
         fontSize: 16,
+        fontFamily: 'PlusJakartaSans_400Regular',
     },
     errorContainer: {
         alignItems: 'center',
@@ -254,11 +230,13 @@ const styles = StyleSheet.create({
         color: Colors.error,
         textAlign: 'center',
         marginBottom: 5,
+        fontFamily: 'PlusJakartaSans_400Regular',
     },
     helpLink: {
         color: Colors.accent,
         textDecorationLine: 'underline',
         marginTop: 5,
+        fontFamily: 'PlusJakartaSans_500Medium',
     },
     button: {
         backgroundColor: Colors.accent,
@@ -274,6 +252,7 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 16,
         fontWeight: '500',
+        fontFamily: 'PlusJakartaSans_500Medium',
     },
     forgotPasswordContainer: {
         alignItems: 'center',
@@ -283,22 +262,25 @@ const styles = StyleSheet.create({
     link: {
         color: Colors.text,
         fontSize: 14,
+        fontFamily: 'PlusJakartaSans_400Regular',
     },
     bottomContainer: {
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        marginTop: 'auto',
+        marginTop: 30,
         paddingBottom: 40,
     },
     signupText: {
         color: Colors.muted,
         fontSize: 14,
+        fontFamily: 'PlusJakartaSans_400Regular',
     },
     signupLink: {
         color: Colors.text,
         fontSize: 14,
         fontWeight: '500',
         marginLeft: 4,
+        fontFamily: 'PlusJakartaSans_500Medium',
     }
 }); 
