@@ -46,6 +46,7 @@ export default function TabLayout() {
           name="history"
           options={{
             title: 'History',
+            headerShown: false,
             tabBarIcon: ({ color }) => <TabBarIcon name="time" color={color} />,
           }}
         />

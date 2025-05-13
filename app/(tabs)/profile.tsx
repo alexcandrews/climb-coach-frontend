@@ -9,6 +9,7 @@ import Spacing from '@/constants/Spacing';
 import BorderRadius from '@/constants/BorderRadius';
 import Shadows from '@/constants/Shadows';
 import LogoHeader from '@/components/LogoHeader';
+import { APP_TEXT_STYLES } from '@/constants/Typography';
 
 const SKILL_LEVELS = ['Beginner', 'Intermediate', 'Advanced', 'Expert'];
 const CLIMBING_STYLES = [
@@ -165,16 +166,16 @@ export default function ProfileScreen() {
                     <View style={styles.profileHeaderContent}>
                         {isEditing ? (
                             <TextInput
-                                style={styles.nameInput}
+                                style={[APP_TEXT_STYLES.screenTitle, styles.nameInput]}
                                 value={name}
                                 onChangeText={setName}
                                 placeholder="Your Name"
                                 placeholderTextColor={Colors.muted}
                             />
                         ) : (
-                            <Text style={styles.nameText}>{name}</Text>
+                            <Text style={[APP_TEXT_STYLES.screenTitle, styles.nameText]}>{name}</Text>
                         )}
-                        <Text style={styles.emailText}>{email}</Text>
+                        <Text style={[APP_TEXT_STYLES.bodyTextMuted, styles.emailText]}>{email}</Text>
                     </View>
                     
                     <TouchableOpacity 
@@ -199,8 +200,8 @@ export default function ProfileScreen() {
                     activeOpacity={isEditing ? 0.7 : 1}
                 >
                     <View style={styles.statBlock}>
-                        <Text style={styles.statValue}>{yearsClimbing}</Text>
-                        <Text style={styles.statLabel}>Years Climbing</Text>
+                        <Text style={[APP_TEXT_STYLES.cardTitle, styles.statValue]}>{yearsClimbing}</Text>
+                        <Text style={[APP_TEXT_STYLES.labelText, styles.statLabel]}>Years Climbing</Text>
                         
                         {isEditing && (
                             <View style={styles.yearsStepper}>
@@ -233,7 +234,7 @@ export default function ProfileScreen() {
                 </TouchableOpacity>
                 
                 <View style={styles.section}>
-                    <Text style={styles.sectionLabel}>Skill Level</Text>
+                    <Text style={[APP_TEXT_STYLES.labelText, styles.sectionLabel]}>Skill Level</Text>
                     
                     {isEditing ? (
                         <View style={styles.skillLevelsContainer}>
@@ -250,6 +251,7 @@ export default function ProfileScreen() {
                                 >
                                     <Text 
                                         style={[
+                                            APP_TEXT_STYLES.buttonText,
                                             styles.skillLevelButtonText,
                                             skillLevel === level && styles.skillLevelButtonTextSelected
                                         ]}
@@ -261,17 +263,17 @@ export default function ProfileScreen() {
                         </View>
                     ) : (
                         <View style={styles.detailBox}>
-                            <Text style={styles.detailText}>{skillLevel}</Text>
+                            <Text style={[APP_TEXT_STYLES.bodyText, styles.detailText]}>{skillLevel}</Text>
                         </View>
                     )}
                 </View>
                 
                 <View style={styles.section}>
-                    <Text style={styles.sectionLabel}>Primary Goals</Text>
+                    <Text style={[APP_TEXT_STYLES.labelText, styles.sectionLabel]}>Primary Goals</Text>
                     
                     {isEditing ? (
                         <TextInput
-                            style={styles.goalsInput}
+                            style={[APP_TEXT_STYLES.inputText, styles.goalsInput]}
                             value={tempGoals}
                             onChangeText={setTempGoals}
                             placeholder="What do you want to achieve with your climbing?"
@@ -280,13 +282,13 @@ export default function ProfileScreen() {
                         />
                     ) : (
                         <View style={styles.detailBox}>
-                            <Text style={styles.detailText}>{primaryGoals}</Text>
+                            <Text style={[APP_TEXT_STYLES.bodyText, styles.detailText]}>{primaryGoals}</Text>
                         </View>
                     )}
                 </View>
                 
                 <View style={styles.section}>
-                    <Text style={styles.sectionLabel}>Climbing Styles</Text>
+                    <Text style={[APP_TEXT_STYLES.labelText, styles.sectionLabel]}>Climbing Styles</Text>
                     
                     {isEditing ? (
                         <View style={styles.climbingStylesContainer}>
@@ -301,6 +303,7 @@ export default function ProfileScreen() {
                                 >
                                     <Text 
                                         style={[
+                                            APP_TEXT_STYLES.buttonText,
                                             styles.climbingStyleButtonText,
                                             climbingStyles.includes(style) && styles.climbingStyleButtonTextSelected
                                         ]}
@@ -315,18 +318,18 @@ export default function ProfileScreen() {
                             {climbingStyles.length > 0 ? (
                                 climbingStyles.map((style, index) => (
                                     <View key={style} style={styles.climbingStyleChip}>
-                                        <Text style={styles.climbingStyleChipText}>{style}</Text>
+                                        <Text style={[APP_TEXT_STYLES.buttonText, styles.climbingStyleChipText]}>{style}</Text>
                                     </View>
                                 ))
                             ) : (
-                                <Text style={styles.emptyText}>No climbing styles selected</Text>
+                                <Text style={[APP_TEXT_STYLES.bodyTextMuted, styles.emptyText]}>No climbing styles selected</Text>
                             )}
                         </View>
                     )}
                 </View>
                 
                 <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
-                    <Text style={styles.signOutButtonText}>Sign Out</Text>
+                    <Text style={[APP_TEXT_STYLES.buttonText, styles.signOutButtonText]}>Sign Out</Text>
                 </TouchableOpacity>
             </ScrollView>
         </SafeAreaView>
@@ -350,8 +353,6 @@ const styles = StyleSheet.create({
     },
     loadingText: {
         marginTop: Spacing.md,
-        color: Colors.muted,
-        fontSize: 16,
     },
     profileHeader: {
         flexDirection: 'row',
@@ -367,23 +368,16 @@ const styles = StyleSheet.create({
         paddingLeft: 10,
     },
     nameText: {
-        fontSize: 22,
-        fontWeight: '600',
-        color: Colors.text,
         marginBottom: Spacing.xs,
     },
     nameInput: {
-        fontSize: 22,
-        fontWeight: '600',
-        color: Colors.text,
         marginBottom: Spacing.xs,
         borderBottomWidth: 1,
         borderBottomColor: Colors.accent,
         paddingVertical: Spacing.xs,
     },
     emailText: {
-        fontSize: 16,
-        color: Colors.muted,
+        // Keep only unique style properties that should override the Typography styles
     },
     statsContainer: {
         backgroundColor: Colors.dark.card,
@@ -399,14 +393,11 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     statValue: {
-        fontSize: 26,
-        fontWeight: 'bold',
-        color: Colors.accent,
         marginBottom: Spacing.xs,
+        color: Colors.accent,
     },
     statLabel: {
-        fontSize: 14,
-        color: Colors.muted,
+        // Only keep unique properties
     },
     yearsStepper: {
         flexDirection: 'row',

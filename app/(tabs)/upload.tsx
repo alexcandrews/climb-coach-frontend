@@ -8,6 +8,7 @@ import { DEV_MODE } from '../config';
 import { useRouter } from 'expo-router';
 import Colors from "../../constants/Colors";
 import LogoHeader from "@/components/LogoHeader";
+import { APP_TEXT_STYLES } from "@/constants/Typography";
 
 // Import video services
 import { 
@@ -70,7 +71,7 @@ export default function UploadScreen() {
         <View style={styles.container}>
             <View style={styles.content}>
                 <LogoHeader marginBottom={60} />
-                <Text style={styles.title}>Upload Climb</Text>
+                <Text style={[APP_TEXT_STYLES.screenTitle, styles.title]}>Upload Climb</Text>
                 
                 <TouchableOpacity 
                     style={styles.uploadButton} 
@@ -78,8 +79,8 @@ export default function UploadScreen() {
                 >
                     <FontAwesome name="plus" size={40} color="#fff" />
                 </TouchableOpacity>
-                <Text style={styles.uploadText}>Upload Video</Text>
-                <Text style={styles.uploadDescription}>
+                <Text style={[APP_TEXT_STYLES.cardTitle, styles.uploadText]}>Upload Video</Text>
+                <Text style={[APP_TEXT_STYLES.bodyTextMuted, styles.uploadDescription]}>
                     Upload a video of your climb to receive feedback.
                 </Text>
             </View>
@@ -109,11 +110,8 @@ const styles = StyleSheet.create({
         alignSelf: 'center',
     },
     title: {
-        fontSize: 30,
-        color: Colors.text,
         textAlign: 'center',
         marginBottom: 30,
-        fontFamily: 'SpaceGrotesk_700Bold',
     },
     uploadButton: {
         width: 180,
@@ -126,16 +124,10 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     uploadText: {
-        color: Colors.text,
-        fontSize: 22,
         marginVertical: 10,
-        fontFamily: 'SpaceGrotesk_700Bold',
     },
     uploadDescription: {
-        color: Colors.muted,
-        fontSize: 16,
         textAlign: 'center',
         marginTop: 10,
-        fontFamily: 'PlusJakartaSans_400Regular',
     }
 });

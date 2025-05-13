@@ -10,12 +10,16 @@ import 'react-native-reanimated';
 import '../global.css';
 
 // Import the Google fonts
+// Space Grotesk - Used for headings, titles, and emphasis text
+// A geometric sans-serif with a modern, technical feel
 import {
   SpaceGrotesk_400Regular,
   SpaceGrotesk_500Medium,
   SpaceGrotesk_700Bold,
 } from '@expo-google-fonts/space-grotesk';
 
+// Plus Jakarta Sans - Used for body text, UI elements, and general content
+// A versatile, highly readable sans-serif with a friendly feel
 import {
   PlusJakartaSans_400Regular,
   PlusJakartaSans_500Medium,
@@ -40,12 +44,18 @@ export const unstable_settings = {
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  // Load all the application fonts in one place to ensure consistent typography throughout the app
+  // These fonts are referenced in the Typography.ts constants file
   const [loaded, error] = useFonts({
+    // Legacy font for backward compatibility
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    // Font Awesome icons
     ...FontAwesome.font,
+    // Brand font for headings: Space Grotesk
     SpaceGrotesk_400Regular,
     SpaceGrotesk_500Medium,
     SpaceGrotesk_700Bold,
+    // Brand font for body text: Plus Jakarta Sans
     PlusJakartaSans_400Regular,
     PlusJakartaSans_500Medium,
     PlusJakartaSans_600SemiBold,

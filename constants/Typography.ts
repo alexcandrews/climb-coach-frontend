@@ -88,4 +88,48 @@ export const TEXT_STYLES = {
     fontSize: FONT_SIZES.base,
     lineHeight: LINE_HEIGHTS.tight,
   },
+};
+
+// Common app component text styles
+export const APP_TEXT_STYLES = {
+  screenTitle: {
+    fontFamily: FONTS.heading.bold,
+    fontSize: FONT_SIZES['2xl'],
+    color: 'white',
+  },
+  sectionTitle: {
+    fontFamily: FONTS.heading.medium,
+    fontSize: FONT_SIZES.xl,
+    color: 'white',
+  },
+  cardTitle: {
+    fontFamily: FONTS.heading.medium,
+    fontSize: FONT_SIZES.lg,
+    color: 'white',
+  },
+  bodyText: {
+    fontFamily: FONTS.body.regular,
+    fontSize: FONT_SIZES.base,
+    color: 'white',
+  },
+  bodyTextMuted: {
+    fontFamily: FONTS.body.regular,
+    fontSize: FONT_SIZES.base,
+    color: '#9CA3AF', // muted color
+  },
+  buttonText: {
+    fontFamily: FONTS.body.semibold,
+    fontSize: FONT_SIZES.base,
+    color: 'white',
+  },
+  inputText: {
+    fontFamily: FONTS.body.regular,
+    fontSize: FONT_SIZES.base,
+    color: 'white',
+  },
+  labelText: {
+    fontFamily: FONTS.body.medium,
+    fontSize: FONT_SIZES.sm,
+    color: '#9CA3AF', // muted color
+  },
 }; 
