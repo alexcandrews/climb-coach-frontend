@@ -182,137 +182,151 @@ export default function HistoryScreen() {
     }
 
     return (
-        <SafeAreaView edges={['top']} style={styles.container}>
-            <StatusBar barStyle="light-content" backgroundColor="#1C232C" />
+        <View style={styles.container}>
+            <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
             
-            {/* Restore original LogoHeader */}
-            <LogoHeader marginBottom={20} />
-            
-            {error ? (
-                <View style={styles.errorContainer}>
-                    <Text style={[APP_TEXT_STYLES.bodyText, styles.errorText]}>Error: {error}</Text>
-                    <TouchableOpacity style={styles.retryButton} onPress={fetchVideos}>
-                        <Text style={[APP_TEXT_STYLES.buttonText, styles.retryText]}>Retry</Text>
-                    </TouchableOpacity>
-                </View>
-            ) : videos.length === 0 ? (
-                <View style={styles.emptyContainer}>
-                    <Text style={[APP_TEXT_STYLES.sectionTitle, styles.emptyText]}>No videos found</Text>
-                    <Text style={[APP_TEXT_STYLES.bodyTextMuted, styles.subText]}>Upload videos to see your climbing history</Text>
-                </View>
-            ) : (
-                <FlatList
-                    data={videos}
-                    keyExtractor={(item) => item.id}
-                    renderItem={({ item }) => {
-                        return (
-                            <TouchableOpacity 
-                                style={styles.videoItem}
-                                onPress={() => router.push(`/video/${item.id}`)}
-                            >
-                                <View style={styles.thumbnailContainer}>
-                                    <View style={styles.thumbnail}>
-                                        {item.thumbnailUrl ? (
-                                            <Image 
-                                                source={{ uri: item.thumbnailUrl }} 
-                                                style={styles.thumbnailImage} 
-                                                resizeMode="cover"
-                                            />
-                                        ) : (
-                                            <View style={styles.placeholderThumbnail}>
-                                                <Ionicons name="film-outline" size={30} color="#555" />
-                                            </View>
-                                        )}
-                                        <TouchableOpacity 
-                                            style={styles.playButton}
-                                            onPress={() => router.push(`/video/${item.id}`)}
-                                        >
-                                            <Ionicons name="play" size={24} color="#fff" />
-                                        </TouchableOpacity>
-                                    </View>
-                                </View>
-                                <View style={styles.videoInfo}>
-                                    {item.title ? (
-                                        <Text style={styles.videoName}>{item.title}</Text>
-                                    ) : (
-                                        <Text style={styles.videoName}>Untitled Climb</Text>
-                                    )}
-                                    <Text style={styles.videoDate}>
-                                        {item.createdAt ? formatDate(item.createdAt) : 'Unknown date'}
-                                    </Text>
-                                </View>
-                            </TouchableOpacity>
-                        );
-                    }}
-                    contentContainerStyle={styles.listContent}
-                    showsVerticalScrollIndicator={false}
-                    refreshControl={
-                        <RefreshControl
-                            refreshing={refreshing}
-                            onRefresh={onRefresh}
-                            colors={[Colors.accent]}
-                            tintColor={Colors.accent}
-                        />
-                    }
-                />
-            )}
-            
-            {/* Modal for displaying insights */}
-            <Modal
-                visible={insightsModalVisible}
-                animationType="slide"
-                transparent={true}
-                onRequestClose={() => setInsightsModalVisible(false)}
-            >
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <View style={styles.modalHeader}>
-                            <Text style={[APP_TEXT_STYLES.sectionTitle, styles.modalTitle]}>Coaching Insights</Text>
-                            <TouchableOpacity 
-                                style={styles.closeButton}
-                                onPress={() => setInsightsModalVisible(false)}
-                            >
-                                <Text style={[APP_TEXT_STYLES.buttonText, styles.closeButtonText]}>Close</Text>
-                            </TouchableOpacity>
-                        </View>
-                        
-                        <ScrollView style={styles.insightsList}>
-                            {selectedVideoInsights?.coachingMoments?.length ? (
-                                selectedVideoInsights.coachingMoments.map((moment, index) => (
-                                    <View key={index} style={styles.insightItem}>
-                                        <View style={styles.insightHeader}>
-                                            <Text style={[APP_TEXT_STYLES.labelText, styles.timestamp]}>
-                                                ⏱️ {formatTimestamp(moment.timestamp)}
-                                            </Text>
-                                            <Text style={[APP_TEXT_STYLES.buttonText, styles.insightType]}>
-                                                {moment.type || 'general'}
-                                            </Text>
+            <View style={styles.content}>
+                {/* LogoHeader with consistent spacing */}
+                <LogoHeader marginBottom={30} />
+                
+                {error ? (
+                    <View style={styles.errorContainer}>
+                        <Text style={[APP_TEXT_STYLES.bodyText, styles.errorText]}>Error: {error}</Text>
+                        <TouchableOpacity style={styles.retryButton} onPress={fetchVideos}>
+                            <Text style={[APP_TEXT_STYLES.buttonText, styles.retryText]}>Retry</Text>
+                        </TouchableOpacity>
+                    </View>
+                ) : videos.length === 0 ? (
+                    <View style={styles.emptyContainer}>
+                        <Text style={[APP_TEXT_STYLES.sectionTitle, styles.emptyText]}>No videos found</Text>
+                        <Text style={[APP_TEXT_STYLES.bodyTextMuted, styles.subText]}>Upload videos to see your climbing history</Text>
+                    </View>
+                ) : (
+                    <FlatList
+                        data={videos}
+                        keyExtractor={(item) => item.id}
+                        renderItem={({ item }) => {
+                            return (
+                                <TouchableOpacity 
+                                    style={styles.videoItem}
+                                    onPress={() => router.push(`/video/${item.id}`)}
+                                >
+                                    <View style={styles.thumbnailContainer}>
+                                        <View style={styles.thumbnail}>
+                                            {item.thumbnailUrl ? (
+                                                <Image 
+                                                    source={{ uri: item.thumbnailUrl }} 
+                                                    style={styles.thumbnailImage} 
+                                                    resizeMode="cover"
+                                                />
+                                            ) : (
+                                                <View style={styles.placeholderThumbnail}>
+                                                    <Ionicons name="film-outline" size={30} color="#555" />
+                                                </View>
+                                            )}
+                                            <TouchableOpacity 
+                                                style={styles.playButton}
+                                                onPress={() => router.push(`/video/${item.id}`)}
+                                            >
+                                                <Ionicons name="play" size={24} color="#fff" />
+                                            </TouchableOpacity>
                                         </View>
-                                        <Text style={[APP_TEXT_STYLES.bodyText, styles.insightText]}>
-                                            {moment.coaching || moment.feedback}
+                                    </View>
+                                    <View style={styles.videoInfo}>
+                                        {item.title ? (
+                                            <Text style={styles.videoName}>{item.title}</Text>
+                                        ) : (
+                                            <Text style={styles.videoName}>Untitled Climb</Text>
+                                        )}
+                                        <Text style={styles.videoDate}>
+                                            {item.createdAt ? formatDate(item.createdAt) : 'Unknown date'}
                                         </Text>
                                     </View>
-                                ))
-                            ) : (
-                                <Text style={[APP_TEXT_STYLES.bodyTextMuted, styles.emptyText]}>
-                                    {selectedVideoInsights?.status === 'no_insights' 
-                                        ? 'No coaching insights available yet' 
-                                        : 'Loading insights...'}
-                                </Text>
-                            )}
-                        </ScrollView>
+                                </TouchableOpacity>
+                            );
+                        }}
+                        contentContainerStyle={styles.listContent}
+                        showsVerticalScrollIndicator={false}
+                        refreshControl={
+                            <RefreshControl
+                                refreshing={refreshing}
+                                onRefresh={onRefresh}
+                                colors={[Colors.accent]}
+                                tintColor={Colors.accent}
+                            />
+                        }
+                    />
+                )}
+                
+                {/* Modal for displaying insights */}
+                <Modal
+                    visible={insightsModalVisible}
+                    animationType="slide"
+                    transparent={true}
+                    onRequestClose={() => setInsightsModalVisible(false)}
+                >
+                    <View style={styles.modalOverlay}>
+                        <View style={styles.modalContent}>
+                            <View style={styles.modalHeader}>
+                                <Text style={[APP_TEXT_STYLES.sectionTitle, styles.modalTitle]}>Coaching Insights</Text>
+                                <TouchableOpacity 
+                                    style={styles.closeButton}
+                                    onPress={() => setInsightsModalVisible(false)}
+                                >
+                                    <Text style={[APP_TEXT_STYLES.buttonText, styles.closeButtonText]}>Close</Text>
+                                </TouchableOpacity>
+                            </View>
+                            
+                            <ScrollView style={styles.insightsList}>
+                                {selectedVideoInsights?.coachingMoments?.length ? (
+                                    selectedVideoInsights.coachingMoments.map((moment, index) => (
+                                        <View key={index} style={styles.insightItem}>
+                                            <View style={styles.insightHeader}>
+                                                <Text style={[APP_TEXT_STYLES.labelText, styles.timestamp]}>
+                                                    ⏱️ {formatTimestamp(moment.timestamp)}
+                                                </Text>
+                                                <Text style={[APP_TEXT_STYLES.buttonText, styles.insightType]}>
+                                                    {moment.type || 'general'}
+                                                </Text>
+                                            </View>
+                                            <Text style={[APP_TEXT_STYLES.bodyText, styles.insightText]}>
+                                                {moment.coaching || moment.feedback}
+                                            </Text>
+                                        </View>
+                                    ))
+                                ) : (
+                                    <Text style={[APP_TEXT_STYLES.bodyTextMuted, styles.emptyText]}>
+                                        {selectedVideoInsights?.status === 'no_insights' 
+                                            ? 'No coaching insights available yet' 
+                                            : 'Loading insights...'}
+                                    </Text>
+                                )}
+                            </ScrollView>
+                        </View>
                     </View>
-                </View>
-            </Modal>
-        </SafeAreaView>
+                </Modal>
+            </View>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#1C232C', // Keep the darker background
-        paddingTop: 10,
+        backgroundColor: Colors.background,
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+    },
+    content: {
+        flex: 1,
+        paddingHorizontal: 25,
+        justifyContent: "flex-start",
+        paddingTop: 80,
+        alignItems: "center",
+        width: '100%',
     },
     loadingContainer: {
         flex: 1,
