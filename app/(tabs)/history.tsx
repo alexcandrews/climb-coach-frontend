@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, RefreshControl, Modal, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, RefreshControl, Modal, ScrollView, Image, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Colors from '../../constants/Colors';
@@ -8,10 +8,11 @@ import { API_CONFIG } from '../config';
 import { useSession } from '../../lib/useSession';
 import { APP_TEXT_STYLES } from '../../constants/Typography';
 import LogoHeader from '../../components/LogoHeader';
+import { Ionicons } from '@expo/vector-icons';
 
 interface VideoItem {
     id: string;
-    name: string;
+    title: string;
     url: string;
     createdAt: string;
     size?: number;
@@ -19,6 +20,8 @@ interface VideoItem {
     hasCoachingInsights?: boolean;
     coachingInsights?: any[];
     insightsCount?: number;
+    thumbnail?: string;
+    thumbnailUrl?: string;
 }
 
 interface InsightData {
@@ -36,7 +39,7 @@ export default function HistoryScreen() {
     const [refreshing, setRefreshing] = useState(false);
     const { session, loading: sessionLoading } = useSession();
     
-    // New state for insights
+    // State for insights
     const [selectedVideoInsights, setSelectedVideoInsights] = useState<InsightData | null>(null);
     const [insightsLoading, setInsightsLoading] = useState(false);
     const [insightsModalVisible, setInsightsModalVisible] = useState(false);
@@ -78,6 +81,11 @@ export default function HistoryScreen() {
                 console.warn('⚠️ No videos array in response:', data);
             }
             
+            // Log each video to check if 'name' field exists
+            if (data.videos && data.videos.length > 0) {
+                console.log('📹 First video details:', data.videos[0]);
+            }
+            
             setVideos(data.videos || []);
         } catch (err) {
             console.error('❌ Error fetching videos:', err);
@@ -97,6 +105,12 @@ export default function HistoryScreen() {
         }
     }, [session, sessionLoading]);
 
+    useEffect(() => {
+        if (videos.length > 0) {
+            console.log('First video structure:', videos[0]);
+        }
+    }, [videos]);
+
     const onRefresh = () => {
         setRefreshing(true);
         fetchVideos();
@@ -107,9 +121,7 @@ export default function HistoryScreen() {
         return date.toLocaleDateString('en-US', { 
             month: 'short', 
             day: 'numeric', 
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
+            year: 'numeric'
         });
     };
     
@@ -170,8 +182,12 @@ export default function HistoryScreen() {
     }
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView edges={['top']} style={styles.container}>
+            <StatusBar barStyle="light-content" backgroundColor="#1C232C" />
+            
+            {/* Restore original LogoHeader */}
             <LogoHeader marginBottom={20} />
+            
             {error ? (
                 <View style={styles.errorContainer}>
                     <Text style={[APP_TEXT_STYLES.bodyText, styles.errorText]}>Error: {error}</Text>
@@ -188,42 +204,54 @@ export default function HistoryScreen() {
                 <FlatList
                     data={videos}
                     keyExtractor={(item) => item.id}
-                    renderItem={({ item }) => (
-                        <TouchableOpacity 
-                            style={styles.videoItem}
-                            onPress={() => router.push(`/video/${item.id}`)}
-                        >
-                            <Text style={[APP_TEXT_STYLES.cardTitle, styles.videoName]}>{item.name}</Text>
-                            <Text style={[APP_TEXT_STYLES.bodyTextMuted, styles.videoDate]}>
-                                {item.createdAt ? formatDate(item.createdAt) : 'Unknown date'}
-                            </Text>
-                            {item.hasCoachingInsights && (
-                                <View style={styles.insightsContainer}>
-                                    <Text style={[APP_TEXT_STYLES.bodyText, styles.insightsText]}>
-                                        {item.insightsCount} coaching {item.insightsCount === 1 ? 'insight' : 'insights'} available
-                                    </Text>
-                                    <TouchableOpacity 
-                                        style={styles.viewInsightsButton}
-                                        onPress={(e) => {
-                                            e.stopPropagation();
-                                            fetchVideoInsights(item.id);
-                                        }}
-                                        disabled={insightsLoading}
-                                    >
-                                        <Text style={[APP_TEXT_STYLES.buttonText, styles.viewInsightsText]}>
-                                            {insightsLoading ? 'Loading...' : 'View Insights'}
-                                        </Text>
-                                    </TouchableOpacity>
+                    renderItem={({ item }) => {
+                        return (
+                            <TouchableOpacity 
+                                style={styles.videoItem}
+                                onPress={() => router.push(`/video/${item.id}`)}
+                            >
+                                <View style={styles.thumbnailContainer}>
+                                    <View style={styles.thumbnail}>
+                                        {item.thumbnailUrl ? (
+                                            <Image 
+                                                source={{ uri: item.thumbnailUrl }} 
+                                                style={styles.thumbnailImage} 
+                                                resizeMode="cover"
+                                            />
+                                        ) : (
+                                            <View style={styles.placeholderThumbnail}>
+                                                <Ionicons name="film-outline" size={30} color="#555" />
+                                            </View>
+                                        )}
+                                        <TouchableOpacity 
+                                            style={styles.playButton}
+                                            onPress={() => router.push(`/video/${item.id}`)}
+                                        >
+                                            <Ionicons name="play" size={24} color="#fff" />
+                                        </TouchableOpacity>
+                                    </View>
                                 </View>
-                            )}
-                        </TouchableOpacity>
-                    )}
+                                <View style={styles.videoInfo}>
+                                    {item.title ? (
+                                        <Text style={styles.videoName}>{item.title}</Text>
+                                    ) : (
+                                        <Text style={styles.videoName}>Untitled Climb</Text>
+                                    )}
+                                    <Text style={styles.videoDate}>
+                                        {item.createdAt ? formatDate(item.createdAt) : 'Unknown date'}
+                                    </Text>
+                                </View>
+                            </TouchableOpacity>
+                        );
+                    }}
                     contentContainerStyle={styles.listContent}
+                    showsVerticalScrollIndicator={false}
                     refreshControl={
                         <RefreshControl
                             refreshing={refreshing}
                             onRefresh={onRefresh}
                             colors={[Colors.accent]}
+                            tintColor={Colors.accent}
                         />
                     }
                 />
@@ -283,7 +311,8 @@ export default function HistoryScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: Colors.background,
+        backgroundColor: '#1C232C', // Keep the darker background
+        paddingTop: 10,
     },
     loadingContainer: {
         flex: 1,
@@ -323,24 +352,79 @@ const styles = StyleSheet.create({
         marginBottom: Spacing.md,
     },
     listContent: {
-        padding: Spacing.md,
+        paddingHorizontal: Spacing.lg,
+        paddingBottom: Spacing.xl,
     },
     videoItem: {
-        backgroundColor: Colors.dark.card,
+        flexDirection: 'row',
+        backgroundColor: 'transparent',
+        marginBottom: 30,
+        alignItems: 'center',
+    },
+    thumbnailContainer: {
+        width: 130,
+        height: 80,
+        marginRight: Spacing.md,
         borderRadius: 8,
-        padding: Spacing.lg,
-        marginBottom: Spacing.md,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-        elevation: 2,
+        overflow: 'hidden'
+    },
+    thumbnail: {
+        width: '100%',
+        height: '100%',
+        backgroundColor: '#2A3440',
+        justifyContent: 'center',
+        alignItems: 'center',
+        position: 'relative',
+        borderRadius: 8,
+        overflow: 'hidden'
+    },
+    thumbnailImage: {
+        width: '100%',
+        height: '100%',
+        backgroundColor: '#2A3440',
+    },
+    placeholderThumbnail: {
+        width: '100%',
+        height: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#2A3440',
+    },
+    playButton: {
+        position: 'absolute',
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 10
+    },
+    videoInfo: {
+        flex: 1,
+        justifyContent: 'center',
     },
     videoName: {
-        marginBottom: Spacing.sm,
+        fontSize: 24,
+        fontWeight: '600',
+        color: Colors.text,
+        marginBottom: 6,
     },
     videoDate: {
-        // Style handled by APP_TEXT_STYLES.bodyTextMuted
+        fontSize: 18,
+        color: 'rgba(160, 168, 163, 0.8)',
+    },
+    insightsButton: {
+        alignSelf: 'flex-start',
+        marginTop: Spacing.sm,
+        paddingVertical: Spacing.xs,
+        paddingHorizontal: Spacing.sm,
+        backgroundColor: Colors.accent,
+        borderRadius: 4,
+    },
+    insightsButtonText: {
+        color: Colors.text,
+        fontWeight: '600',
     },
     subText: {
         textAlign: 'center',
