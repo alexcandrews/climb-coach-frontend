@@ -1,10 +1,11 @@
-// Spacing values for consistent padding and margins
+// Spacing constants for consistent layout padding and margins
 const Spacing = {
-  xs: 4,
-  sm: 8,
-  md: 16,
-  lg: 24,
-  xl: 32,
+  xs: 4,   // Extra small spacing
+  sm: 8,   // Small spacing
+  md: 16,  // Medium spacing (base spacing)
+  lg: 24,  // Large spacing
+  xl: 32,  // Extra large spacing
+  xxl: 48, // 2x Extra large spacing
 };
 
 export default Spacing; 

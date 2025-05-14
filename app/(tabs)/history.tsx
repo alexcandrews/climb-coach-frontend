@@ -2,12 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, RefreshControl, Modal, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import Colors from '@/constants/Colors';
-import Spacing from '@/constants/Spacing';
+import Colors from '../../constants/Colors';
+import Spacing from '../../constants/Spacing';
 import { API_CONFIG } from '../config';
-import { useSession } from '@/lib/useSession';
-import { APP_TEXT_STYLES } from '@/constants/Typography';
-import LogoHeader from '@/components/LogoHeader';
+import { useSession } from '../../lib/useSession';
+import { APP_TEXT_STYLES } from '../../constants/Typography';
+import LogoHeader from '../../components/LogoHeader';
 
 interface VideoItem {
     id: string;
@@ -345,6 +345,86 @@ const styles = StyleSheet.create({
     subText: {
         textAlign: 'center',
     },
-    // Keep the rest of the styles with positioning/layout only
-    // ...
+    insightsContainer: {
+        marginTop: Spacing.sm,
+        borderTopWidth: 1,
+        borderTopColor: 'rgba(255,255,255,0.1)',
+        paddingTop: Spacing.sm,
+    },
+    insightsText: {
+        marginBottom: Spacing.xs,
+    },
+    viewInsightsButton: {
+        backgroundColor: Colors.accent,
+        paddingVertical: Spacing.xs,
+        paddingHorizontal: Spacing.sm,
+        borderRadius: 6,
+        alignSelf: 'flex-start',
+        marginTop: Spacing.xs,
+    },
+    viewInsightsText: {
+        color: Colors.text,
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: Spacing.md,
+    },
+    modalContent: {
+        backgroundColor: Colors.dark.card,
+        borderRadius: 12,
+        width: '100%',
+        maxHeight: '80%',
+        padding: Spacing.md,
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: Spacing.md,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(255,255,255,0.1)',
+        paddingBottom: Spacing.sm,
+    },
+    modalTitle: {
+        // Style handled by APP_TEXT_STYLES.sectionTitle
+    },
+    closeButton: {
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        paddingVertical: Spacing.xs,
+        paddingHorizontal: Spacing.sm,
+        borderRadius: 6,
+    },
+    closeButtonText: {
+        // Style handled by APP_TEXT_STYLES.buttonText
+    },
+    insightsList: {
+        flex: 1,
+    },
+    insightItem: {
+        backgroundColor: 'rgba(255,255,255,0.05)',
+        borderRadius: 8,
+        padding: Spacing.md,
+        marginBottom: Spacing.md,
+    },
+    insightHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: Spacing.sm,
+    },
+    timestamp: {
+        // Style handled by APP_TEXT_STYLES.labelText
+    },
+    insightType: {
+        backgroundColor: Colors.accent,
+        paddingVertical: 2,
+        paddingHorizontal: 8,
+        borderRadius: 4,
+    },
+    insightText: {
+        // Style handled by APP_TEXT_STYLES.bodyText
+    },
 }); 

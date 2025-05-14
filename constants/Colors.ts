@@ -1,30 +1,42 @@
-// Brand colors from the tailwind configuration
+// Define the application color scheme
 const Colors = {
-  // Primary brand colors
-  background: '#22303C', // Deep Navy
-  accent: '#3E6E68',     // Forest Teal
-  text: '#E6EFF4',       // Glacier (for light text)
-  muted: '#A0A8A3',      // Dust
+  // Light theme colors
+  light: {
+    text: '#22303C', // Deep Navy for text on light bg
+    background: '#FFFFFF',
+    card: '#F5F7F9',
+    primary: '#3E6E68', // Forest Teal
+    accent: '#3E6E68', // Forest Teal
+    muted: '#A0A8A3', // Dust color
+    error: '#ef4444',
+    success: '#4ade80',
+    warning: '#f59e0b',
+    info: '#3b82f6',
+  },
   
-  // Common UI states
-  success: '#4ade80',
+  // Dark theme colors
+  dark: {
+    text: '#E6EFF4', // Glacier for text on dark bg
+    background: '#22303C', // Deep Navy
+    card: '#2C3B48', // Slightly lighter navy for cards
+    primary: '#3E6E68', // Forest Teal
+    accent: '#3E6E68', // Forest Teal
+    muted: '#A0A8A3', // Dust color
+    error: '#ef4444',
+    success: '#4ade80',
+    warning: '#f59e0b',
+    info: '#3b82f6',
+  },
+  
+  // Directly accessible common colors
+  accent: '#3E6E68', // Forest Teal
+  background: '#22303C', // Deep Navy
+  text: '#E6EFF4', // Glacier
+  muted: '#A0A8A3', // Dust
   error: '#ef4444',
+  success: '#4ade80',
   warning: '#f59e0b',
   info: '#3b82f6',
-  
-  // Additional UI colors
-  light: {
-    background: '#FFFFFF',
-    card: '#F9FAFB',
-    text: '#111827',
-    border: '#E5E7EB',
-  },
-  dark: {
-    background: '#1F2937',
-    card: '#111827',
-    text: '#F9FAFB',
-    border: '#374151',
-  },
 };
 
 export default Colors; 
