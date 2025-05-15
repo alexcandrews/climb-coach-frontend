@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, Alert, TouchableOpacity, Dimensions, SafeAreaView } from 'react-native';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { Video, ResizeMode } from 'expo-av';
-import { createVideoFormData } from '@/lib/api/videos';
+import { uploadVideoDirectToSupabase, updateVideoMetadata } from '@/lib/api/videos';
 import api from '@/lib/api';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '@/constants/Colors';
@@ -11,6 +11,7 @@ import LogoHeader from '@/components/LogoHeader';
 import Spacing from '@/constants/Spacing';
 import BorderRadius from '@/constants/BorderRadius';
 import Shadows from '@/constants/Shadows';
+import * as Progress from 'react-native-progress';
 
 export default function VideoUploadDetailsScreen() {
     const router = useRouter();
@@ -20,6 +21,7 @@ export default function VideoUploadDetailsScreen() {
     const [uploading, setUploading] = useState(false);
     const [status, setStatus] = useState('');
     const [aspectRatio, setAspectRatio] = useState(16 / 9);
+    const [uploadProgress, setUploadProgress] = useState(0);
     
     // Use dimensions to calculate a good size for the video
     const windowWidth = Dimensions.get('window').width;
@@ -29,40 +31,62 @@ export default function VideoUploadDetailsScreen() {
 
     const handleUpload = async () => {
         if (!title.trim()) {
-            Alert.alert('Error', 'Please enter a title for your video');
+            Alert.alert('Title Required', 'Please enter a title for your video.');
             return;
         }
-        
-        setUploading(true);
-        setStatus('Uploading video...');
-        
+
         try {
-            // Create form data with the video file
-            const formData = await createVideoFormData(videoUri as string);
+            setUploading(true);
+            setStatus('Preparing upload...');
             
-            // Add title and location to the form data
-            formData.append('title', title.trim());
-            if (location.trim()) {
-                formData.append('location', location.trim());
+            if (videoUri) {
+                // Use direct Supabase upload for better performance and reliability
+                const result = await uploadVideoDirectToSupabase(videoUri as string, (progress) => {
+                    setUploadProgress(progress);
+                    
+                    // Set status message based on progress
+                    if (progress < 90) {
+                        setStatus(`Uploading video: ${progress}%`);
+                    } else if (progress < 100) {
+                        setStatus('Finalizing upload...');
+                    } else {
+                        setStatus('Upload complete!');
+                    }
+                });
+                
+                // Handle different result scenarios
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+                
+                // Update metadata if we have an ID
+                if (result.id) {
+                    try {
+                        await updateVideoMetadata(result.id, {
+                            title: title.trim(),
+                            location: location.trim() || undefined
+                        });
+                    } catch (metadataError) {
+                        console.warn('Failed to update video metadata, but upload was successful:', metadataError);
+                    }
+                }
+                
+                setStatus('Upload successful!');
+                
+                // Navigate immediately and show toast/alert after navigation
+                router.replace('/(tabs)/history');
+                
+                // Short delay before showing alert to ensure navigation has started
+                setTimeout(() => {
+                    // Show success message after navigation starts
+                    Alert.alert(
+                        'Upload Successful', 
+                        'Your video has been uploaded and is being analyzed in the background. You can view it in your video history.'
+                    );
+                }, 100);
+            } else {
+                throw new Error('No video selected');
             }
-            
-            // Upload the video with metadata
-            const response = await api.post('/api/videos/upload', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                },
-                timeout: 60000 // 60 second timeout for large uploads
-            });
-            
-            if (response.status !== 200 || !response.data.url) {
-                throw new Error(response.data?.error || 'Upload failed');
-            }
-            
-            setStatus('Upload successful!');
-            Alert.alert('Success', 'Your video has been uploaded successfully!');
-            
-            // Navigate back to history tab
-            router.replace('/(tabs)/history');
         } catch (error) {
             setStatus('');
             console.error('Upload failed:', error);
@@ -103,7 +127,21 @@ export default function VideoUploadDetailsScreen() {
                 <View style={styles.content}>
                     <LogoHeader marginBottom={20} />
                     <Text style={styles.header}>Preview & Upload</Text>
+                    
+                    {/* Status and progress */}
                     {status ? <Text style={styles.statusText}>{status}</Text> : null}
+                    {uploading && (
+                        <View style={styles.progressContainer}>
+                            <Progress.Bar 
+                                progress={uploadProgress / 100}
+                                width={null}
+                                color={Colors.accent}
+                                unfilledColor="rgba(255,255,255,0.1)"
+                                borderWidth={0}
+                                style={styles.progressBar}
+                            />
+                        </View>
+                    )}
                     
                     {/* Video container with dynamic aspect ratio */}
                     <View style={styles.videoContainer}>
@@ -143,6 +181,7 @@ export default function VideoUploadDetailsScreen() {
                             value={title}
                             onChangeText={setTitle}
                             selectionColor={Colors.accent}
+                            editable={!uploading}
                         />
                         <TextInput
                             style={styles.input}
@@ -151,6 +190,7 @@ export default function VideoUploadDetailsScreen() {
                             value={location}
                             onChangeText={setLocation}
                             selectionColor={Colors.accent}
+                            editable={!uploading}
                         />
                         <StyledButton
                             title={uploading ? 'Uploading...' : 'Upload Video'}
@@ -195,8 +235,17 @@ const styles = StyleSheet.create({
         padding: Spacing.sm,
         backgroundColor: 'rgba(255,255,255,0.1)',
         borderRadius: BorderRadius.md,
-        marginBottom: Spacing.md,
+        marginBottom: Spacing.xs,
         color: Colors.text,
+    },
+    progressContainer: {
+        marginBottom: Spacing.md,
+        width: '100%',
+    },
+    progressBar: {
+        height: 8,
+        borderRadius: 4,
+        width: '100%',
     },
     videoContainer: {
         backgroundColor: '#000',
