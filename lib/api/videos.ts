@@ -105,6 +105,51 @@ export const createVideoFormData = async (videoUri: string): Promise<FormData> =
  * File size thresholds for chunked upload in bytes
  */
 const CHUNKED_UPLOAD_THRESHOLD = 5 * 1024 * 1024; // 5MB
+const CHUNK_SIZE = 2 * 1024 * 1024; // 2MB chunks (larger for better performance)
+const MAX_CONCURRENT_UPLOADS = 4; // Number of parallel uploads
+
+/**
+ * Helper function to upload a single chunk with retry logic
+ * @param bucketName Storage bucket name
+ * @param filePath Full path for the chunk file
+ * @param chunkBlob Blob data for this chunk
+ * @param maxAttempts Maximum number of retry attempts
+ * @returns Promise that resolves when upload is successful
+ */
+const uploadChunkWithRetry = async (
+    bucketName: string,
+    filePath: string, 
+    chunkBlob: Blob, 
+    maxAttempts: number = 3
+): Promise<void> => {
+    let attempts = 0;
+    
+    while (attempts < maxAttempts) {
+        try {
+            const { error } = await supabase.storage
+                .from(bucketName)
+                .upload(filePath, chunkBlob, {
+                    contentType: 'application/octet-stream',
+                    upsert: true,
+                });
+                
+            if (error) throw error;
+            return; // Success, exit function
+        } catch (error) {
+            console.error(`❌ Error uploading chunk ${filePath}, attempt ${attempts + 1}:`, error);
+            attempts++;
+            
+            if (attempts >= maxAttempts) {
+                throw new Error(`Failed to upload chunk ${filePath} after ${maxAttempts} attempts`);
+            }
+            
+            // Exponential backoff
+            const delay = Math.pow(2, attempts) * 1000;
+            console.log(`⏱️ Retrying chunk ${filePath} after ${delay}ms delay...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
+    }
+};
 
 /**
  * Uploads a video to the server (legacy method)
@@ -188,68 +233,47 @@ export const uploadVideoDirectToSupabase = async (
         // Start progress
         onProgress?.(5);
         
-        // File is larger than 5MB, use chunked upload directly to Supabase
+        // File is larger than threshold, use chunked upload directly to Supabase
         if (totalSize > CHUNKED_UPLOAD_THRESHOLD) {
-            console.log('🧩 Using chunked upload directly to Supabase Storage');
+            console.log('🧩 Using parallel chunked upload directly to Supabase Storage');
             
             // Set up chunk parameters
-            const CHUNK_SIZE = 1 * 1024 * 1024; // 1MB chunks (smaller for better progress reporting)
             const totalChunks = Math.ceil(totalSize / CHUNK_SIZE);
             let uploadedChunks = 0;
             
-            console.log(`📊 Splitting file into ${totalChunks} chunks of ${CHUNK_SIZE / 1024} KB each`);
+            console.log(`📊 Splitting file into ${totalChunks} chunks of ${CHUNK_SIZE / 1024} KB each with ${MAX_CONCURRENT_UPLOADS} parallel uploads`);
             
-            // Upload each chunk with retry
-            for (let i = 0; i < totalChunks; i++) {
-                const start = i * CHUNK_SIZE;
-                const end = Math.min(start + CHUNK_SIZE, totalSize);
-                const chunkBlob = blob.slice(start, end);
+            // Process chunks in batches for controlled parallelism
+            for (let i = 0; i < totalChunks; i += MAX_CONCURRENT_UPLOADS) {
+                const uploadPromises = [];
+                const batchSize = Math.min(MAX_CONCURRENT_UPLOADS, totalChunks - i);
                 
-                // Implement retry logic
-                let attempts = 0;
-                const maxAttempts = 3;
-                let success = false;
-                
-                while (attempts < maxAttempts && !success) {
-                    try {
-                        // Upload chunk directly
-                        const { data, error } = await supabase.storage
-                            .from('videos')
-                            .upload(
-                                `${fileName}.part${i}`, 
-                                chunkBlob, 
-                                {
-                                    contentType: 'application/octet-stream',
-                                    upsert: true,
-                                }
-                            );
-                            
-                        if (error) throw error;
-                        success = true;
-                        
-                        // Update progress
-                        uploadedChunks++;
-                        const progress = Math.min(Math.round((uploadedChunks / totalChunks) * 90) + 5, 95);
-                        onProgress?.(progress);
-                        
-                        console.log(`✅ Chunk ${i+1}/${totalChunks} uploaded successfully (${((i+1)/totalChunks*100).toFixed(0)}%)`);
-                    } catch (error) {
-                        console.error(`❌ Error uploading chunk ${i}, attempt ${attempts + 1}:`, error);
-                        attempts++;
-                        
-                        if (attempts >= maxAttempts) {
-                            throw new Error(`Failed to upload chunk ${i} after ${maxAttempts} attempts`);
-                        }
-                        
-                        // Exponential backoff
-                        const delay = Math.pow(2, attempts) * 1000;
-                        console.log(`⏱️ Retrying chunk ${i} after ${delay}ms delay...`);
-                        await new Promise(resolve => setTimeout(resolve, delay));
-                    }
+                // Create a batch of promises for concurrent upload
+                for (let j = 0; j < batchSize; j++) {
+                    const chunkIndex = i + j;
+                    const start = chunkIndex * CHUNK_SIZE;
+                    const end = Math.min(start + CHUNK_SIZE, totalSize);
+                    const chunkBlob = blob.slice(start, end);
+                    const chunkPath = `${fileName}.part${chunkIndex}`;
+                    
+                    // Add to batch of parallel uploads
+                    uploadPromises.push(
+                        uploadChunkWithRetry('videos', chunkPath, chunkBlob)
+                            .then(() => {
+                                // Update progress for each completed chunk
+                                uploadedChunks++;
+                                const progress = Math.min(Math.round((uploadedChunks / totalChunks) * 90) + 5, 95);
+                                onProgress?.(progress);
+                                console.log(`✅ Chunk ${chunkIndex+1}/${totalChunks} uploaded successfully (${((uploadedChunks/totalChunks)*100).toFixed(0)}%)`);
+                            })
+                    );
                 }
+                
+                // Wait for current batch to complete before moving to next batch
+                await Promise.all(uploadPromises);
             }
             
-            console.log(`✅ Successfully uploaded all ${totalChunks} chunks`);
+            console.log(`✅ Successfully uploaded all ${totalChunks} chunks in parallel`);
             
             // Update progress to indicate completion of upload
             onProgress?.(100);
