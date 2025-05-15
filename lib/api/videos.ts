@@ -2,6 +2,7 @@ import api from '../api';
 import { Platform } from 'react-native';
 import supabase from '../supabase';
 import { v4 as uuidv4 } from 'uuid';
+import { UPLOAD_CONFIG } from '../config/upload';
 
 export interface UserVideo {
     id: string;
@@ -100,13 +101,6 @@ export const createVideoFormData = async (videoUri: string): Promise<FormData> =
 
     return formData;
 };
-
-/**
- * File size thresholds for chunked upload in bytes
- */
-const CHUNKED_UPLOAD_THRESHOLD = 5 * 1024 * 1024; // 5MB
-const CHUNK_SIZE = 2 * 1024 * 1024; // 2MB chunks (larger for better performance)
-const MAX_CONCURRENT_UPLOADS = 4; // Number of parallel uploads
 
 /**
  * Helper function to upload a single chunk with retry logic
@@ -234,25 +228,25 @@ export const uploadVideoDirectToSupabase = async (
         onProgress?.(5);
         
         // File is larger than threshold, use chunked upload directly to Supabase
-        if (totalSize > CHUNKED_UPLOAD_THRESHOLD) {
+        if (totalSize > UPLOAD_CONFIG.CHUNKED_UPLOAD_THRESHOLD) {
             console.log('🧩 Using parallel chunked upload directly to Supabase Storage');
             
             // Set up chunk parameters
-            const totalChunks = Math.ceil(totalSize / CHUNK_SIZE);
+            const totalChunks = Math.ceil(totalSize / UPLOAD_CONFIG.CHUNK_SIZE);
             let uploadedChunks = 0;
             
-            console.log(`📊 Splitting file into ${totalChunks} chunks of ${CHUNK_SIZE / 1024} KB each with ${MAX_CONCURRENT_UPLOADS} parallel uploads`);
+            console.log(`📊 Splitting file into ${totalChunks} chunks of ${UPLOAD_CONFIG.CHUNK_SIZE / 1024} KB each with ${UPLOAD_CONFIG.MAX_CONCURRENT_UPLOADS} parallel uploads`);
             
             // Process chunks in batches for controlled parallelism
-            for (let i = 0; i < totalChunks; i += MAX_CONCURRENT_UPLOADS) {
+            for (let i = 0; i < totalChunks; i += UPLOAD_CONFIG.MAX_CONCURRENT_UPLOADS) {
                 const uploadPromises = [];
-                const batchSize = Math.min(MAX_CONCURRENT_UPLOADS, totalChunks - i);
+                const batchSize = Math.min(UPLOAD_CONFIG.MAX_CONCURRENT_UPLOADS, totalChunks - i);
                 
                 // Create a batch of promises for concurrent upload
                 for (let j = 0; j < batchSize; j++) {
                     const chunkIndex = i + j;
-                    const start = chunkIndex * CHUNK_SIZE;
-                    const end = Math.min(start + CHUNK_SIZE, totalSize);
+                    const start = chunkIndex * UPLOAD_CONFIG.CHUNK_SIZE;
+                    const end = Math.min(start + UPLOAD_CONFIG.CHUNK_SIZE, totalSize);
                     const chunkBlob = blob.slice(start, end);
                     const chunkPath = `${fileName}.part${chunkIndex}`;
                     
