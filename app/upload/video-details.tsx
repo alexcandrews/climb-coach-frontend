@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, Alert, TouchableOpacity, Dimensions, SafeAreaView } from 'react-native';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { Video, ResizeMode } from 'expo-av';
-import { uploadVideoDirectToSupabase, updateVideoMetadata } from '@/lib/api/videos';
+import { uploadVideoDirectToSupabase /* , updateVideoMetadata */ } from '@/lib/api/videos';
 import api from '@/lib/api';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '@/constants/Colors';
@@ -60,6 +60,7 @@ export default function VideoUploadDetailsScreen() {
                 }
                 
                 // Update metadata if we have an ID
+                /*
                 if (result.id) {
                     try {
                         await updateVideoMetadata(result.id, {
@@ -70,6 +71,7 @@ export default function VideoUploadDetailsScreen() {
                         console.warn('Failed to update video metadata, but upload was successful:', metadataError);
                     }
                 }
+                */
                 
                 setStatus('Upload successful!');
                 

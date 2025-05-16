@@ -250,6 +250,14 @@ export const uploadVideoDirectToSupabase = async (
                     const chunkBlob = blob.slice(start, end);
                     const chunkPath = `${fileName}.part${chunkIndex}`;
                     
+                    // Add more detailed logging about the chunk
+                    console.log(`📦 Preparing chunk ${chunkIndex+1}/${totalChunks}:`, {
+                        path: chunkPath,
+                        size: chunkBlob.size,
+                        start,
+                        end
+                    });
+                    
                     // Add to batch of parallel uploads
                     uploadPromises.push(
                         uploadChunkWithRetry('videos', chunkPath, chunkBlob)
@@ -258,13 +266,23 @@ export const uploadVideoDirectToSupabase = async (
                                 uploadedChunks++;
                                 const progress = Math.min(Math.round((uploadedChunks / totalChunks) * 90) + 5, 95);
                                 onProgress?.(progress);
-                                console.log(`✅ Chunk ${chunkIndex+1}/${totalChunks} uploaded successfully (${((uploadedChunks/totalChunks)*100).toFixed(0)}%)`);
+                                console.log(`✅ Chunk ${chunkIndex+1}/${totalChunks} uploaded successfully (${((uploadedChunks/totalChunks)*100).toFixed(0)}%) to ${chunkPath}`);
+                            })
+                            .catch(error => {
+                                console.error(`❌ Failed to upload chunk ${chunkIndex+1}/${totalChunks}:`, error);
+                                throw error; // Re-throw to be caught by Promise.all
                             })
                     );
                 }
                 
                 // Wait for current batch to complete before moving to next batch
-                await Promise.all(uploadPromises);
+                try {
+                    await Promise.all(uploadPromises);
+                    console.log(`✅ Batch ${i/UPLOAD_CONFIG.MAX_CONCURRENT_UPLOADS + 1} completed successfully`);
+                } catch (batchError: any) {
+                    console.error(`❌ Error in upload batch:`, batchError);
+                    throw new Error(`Failed to upload batch: ${batchError.message}`);
+                }
             }
             
             console.log(`✅ Successfully uploaded all ${totalChunks} chunks in parallel`);
@@ -272,9 +290,51 @@ export const uploadVideoDirectToSupabase = async (
             // Update progress to indicate completion of upload
             onProgress?.(100);
             
+            // Get public URL base that will be used after processing
+            const { data: publicUrl } = supabase.storage
+                .from('videos')
+                .getPublicUrl(fileName);
+            
+            // After successful upload, create the database record
+            console.log('✅ Upload complete. Database record creation and processing are commented out for now');
+            
+            /* COMMENTED OUT: Database record creation and backend notification
+            console.log('📝 Creating database record for video after successful upload');
+            let dbCreateSuccess = false; // Track if database creation succeeded
+            try {
+                console.log(`Creating record with video ID: ${fileId}`);
+                console.log(`User ID: ${user.id}`);
+                console.log(`File size: ${totalSize}`);
+                
+                const response = await api.post('/api/videos/create-record', {
+                    videoId: fileId,
+                    userId: user.id,
+                    title: 'Untitled Video', // Will be updated later
+                    size: totalSize,
+                    contentType: 'video/mp4',
+                    status: 'processing'
+                });
+                console.log('✅ Created database record for video', response.data);
+                dbCreateSuccess = true;
+            } catch (dbError: any) {
+                console.error('❌ Failed to create database record:', dbError);
+                console.error('Response details:', dbError.response?.data);
+                console.log('⚠️ Will notify backend directly about the uploaded video');
+            }
+            
             // Notify the backend to combine chunks async - don't wait for response
             // Add retry logic with exponential backoff
             const notifyBackendWithRetry = (attempt = 1, maxAttempts = 5, initialDelay = 2000) => {
+                console.log(`Sending combine-chunks request (attempt ${attempt}/${maxAttempts})`);
+                console.log(`Request data:`, {
+                    videoId: fileId,
+                    userId: user.id,
+                    fileName: fileName,
+                    totalChunks: totalChunks,
+                    contentType: 'video/mp4',
+                    size: totalSize,
+                });
+                
                 api.post('/api/videos/combine-chunks', {
                     videoId: fileId,
                     userId: user.id,
@@ -286,6 +346,7 @@ export const uploadVideoDirectToSupabase = async (
                     console.log('✅ Backend notified to process chunks', response.data);
                 }).catch(error => {
                     console.error(`❌ Error notifying backend to process chunks (attempt ${attempt}/${maxAttempts}):`, error);
+                    console.error('Response details:', error.response?.data);
                     
                     if (attempt < maxAttempts) {
                         // Use exponential backoff with jitter
@@ -303,11 +364,7 @@ export const uploadVideoDirectToSupabase = async (
             
             // Start the retry process
             notifyBackendWithRetry();
-            
-            // Get public URL base that will be used after processing
-            const { data: publicUrl } = supabase.storage
-                .from('videos')
-                .getPublicUrl(fileName);
+            */
                 
             // Return success immediately - don't wait for processing
             return { 
@@ -339,6 +396,9 @@ export const uploadVideoDirectToSupabase = async (
                 throw new Error('Failed to get public URL for uploaded video');
             }
             
+            console.log('✅ Upload complete. Database record creation and processing are commented out for now');
+            
+            /* COMMENTED OUT: Backend notification
             // Now notify the backend about the uploaded video to trigger AI analysis
             // Don't wait for response - do it asynchronously
             const notifyBackendWithRetry = (attempt = 1, maxAttempts = 5, initialDelay = 2000) => {
@@ -369,6 +429,7 @@ export const uploadVideoDirectToSupabase = async (
             
             // Start the retry process
             notifyBackendWithRetry();
+            */
             
             // Return success immediately - don't wait for processing
             return {
