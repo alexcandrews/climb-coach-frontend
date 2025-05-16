@@ -1,10 +1,31 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Dimensions, TouchableOpacity, Platform } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { Video, ResizeMode } from 'expo-av';
+import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Colors from '@/constants/Colors';
 import { getVideo, VideoDetails } from '@/lib/api/videos';
+
+// Create a custom CSS style for the video player
+const videoStyles = Platform.OS === 'web' ? 
+  `
+    #climb-coach-video-container,
+    #climb-coach-video-container * {
+      transform: rotate(0deg) !important;
+    }
+    #climb-coach-video-player {
+      transform: rotate(0deg) !important;
+    }
+    #climb-coach-video-player:-webkit-full-screen {
+      transform: rotate(0deg) !important;
+    }
+    #climb-coach-video-player::-webkit-media-controls {
+      transform: rotate(0deg) !important;
+    }
+    #climb-coach-video-player::-webkit-media-controls-timeline {
+      transform: rotate(0deg) !important;
+    }
+  ` : '';
 
 export default function VideoScreen() {
   const { id } = useLocalSearchParams();
@@ -12,6 +33,57 @@ export default function VideoScreen() {
   const [video, setVideo] = useState<VideoDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const videoRef = useRef(null);
+  
+  // Track video playback status
+  const [status, setStatus] = useState<AVPlaybackStatus | null>(null);
+  
+  // Web-specific refs and effects - moved to component top level
+  const videoContainerRef = useRef(null);
+  
+  // Effect to inject custom CSS for web
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      // Create and inject a style element
+      const styleElement = document.createElement('style');
+      styleElement.textContent = videoStyles;
+      document.head.appendChild(styleElement);
+      
+      // Cleanup on unmount
+      return () => {
+        document.head.removeChild(styleElement);
+      };
+    }
+  }, []);
+  
+  // Effect to handle web video element creation
+  useEffect(() => {
+    if (Platform.OS === 'web' && videoContainerRef.current && video) {
+      // Clear previous content
+      const container = videoContainerRef.current as HTMLDivElement;
+      container.innerHTML = '';
+      
+      // Create and configure video element
+      const videoElement = document.createElement('video');
+      videoElement.id = 'climb-coach-video-player';
+      videoElement.src = video.videoUrl;
+      videoElement.controls = true;
+      videoElement.playsInline = true;
+      videoElement.style.width = '100%';
+      videoElement.style.height = '100%';
+      videoElement.style.objectFit = 'contain';
+      videoElement.style.transform = 'rotate(0deg)';
+      
+      // Prevent the hover issue by explicitly handling mouse events
+      videoElement.addEventListener('mouseenter', (e) => {
+        e.preventDefault();
+        videoElement.style.transform = 'rotate(0deg)';
+      });
+      
+      // Add to container
+      container.appendChild(videoElement);
+    }
+  }, [video, videoContainerRef.current]);
 
   useEffect(() => {
     const loadVideo = async () => {
@@ -38,6 +110,81 @@ export default function VideoScreen() {
 
     loadVideo();
   }, [id]);
+
+  // Handle status updates from the video player
+  const handlePlaybackStatusUpdate = (status: AVPlaybackStatus) => {
+    setStatus(status);
+    console.log('Video status update:', status);
+  };
+
+  // Function to reload video player
+  const reloadVideo = async () => {
+    if (videoRef.current && Platform.OS !== 'web') {
+      try {
+        // @ts-ignore - TypeScript doesn't recognize the replayAsync method
+        await videoRef.current.unloadAsync();
+        // @ts-ignore
+        await videoRef.current.loadAsync({ uri: video?.videoUrl }, { shouldPlay: false }, false);
+      } catch (err) {
+        console.error('Error reloading video:', err);
+      }
+    } else if (Platform.OS === 'web' && video) {
+      // For web, we'll just force a re-render
+      setVideo({...video});
+    }
+  };
+
+  // Get readable status for debugging
+  const getVideoStatusText = () => {
+    if (!status) return 'Not initialized';
+    if (!('isLoaded' in status)) return 'Loading or error state';
+    
+    if (status.isLoaded) {
+      return status.isPlaying ? 'Playing' : 'Paused';
+    } else {
+      return `Error: ${status.error}`;
+    }
+  };
+
+  // Render platform-specific video player
+  const renderVideoPlayer = () => {
+    if (!video) return null;
+    
+    if (Platform.OS === 'web') {
+      // Return the container that will be populated by the useEffect
+      return (
+        <div 
+          id="climb-coach-video-container"
+          ref={videoContainerRef}
+          style={{
+            width: '100%',
+            aspectRatio: '16/9',
+            borderRadius: 12,
+            overflow: 'hidden',
+            backgroundColor: '#000',
+            position: 'relative',
+            transform: 'rotate(0deg)',
+          }}
+        />
+      );
+    } else {
+      // For native platforms, use the Expo Video component
+      return (
+        <Video
+          ref={videoRef}
+          source={{ uri: video.videoUrl }}
+          style={styles.video}
+          useNativeControls
+          resizeMode={ResizeMode.CONTAIN}
+          isLooping={false}
+          shouldPlay={false}
+          positionMillis={0}
+          onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
+          onError={(error) => console.error("Video playback error:", error)}
+        />
+      );
+    }
+  };
 
   if (loading) {
     return (
@@ -98,14 +245,18 @@ export default function VideoScreen() {
           <Text style={styles.metaText}>{"Indoor Climbing"}</Text>
         </View>
 
-        <View style={styles.videoContainer}>
-          <Video
-            source={{ uri: video.videoUrl }}
-            style={styles.video}
-            useNativeControls
-            resizeMode={ResizeMode.CONTAIN}
-            isLooping={false}
-          />
+        <View style={styles.videoOuterContainer}>
+          <View style={styles.videoContainer}>
+            {renderVideoPlayer()}
+          </View>
+        </View>
+        
+        {/* Debug info */}
+        <View style={styles.debugContainer}>
+          <Text style={styles.debugText}>Player status: {getVideoStatusText()}</Text>
+          <TouchableOpacity style={styles.reloadButton} onPress={reloadVideo}>
+            <Text style={styles.reloadButtonText}>Reload Video</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.insightsContainer}>
@@ -175,16 +326,30 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.muted,
   },
+  videoOuterContainer: {
+    width: '100%',
+    marginBottom: 24,
+    paddingBottom: 40,
+  },
   videoContainer: {
     width: '100%',
     aspectRatio: 16 / 9,
     backgroundColor: '#000',
     borderRadius: 12,
-    overflow: 'hidden',
-    marginBottom: 24,
+    minHeight: 200,
+    ...(Platform.OS === 'web' ? {
+      position: 'relative',
+      zIndex: 1,
+    } : {})
   },
   video: {
-    flex: 1,
+    width: '100%',
+    height: '100%',
+    borderRadius: 12,
+    ...(Platform.OS === 'web' ? {
+      minHeight: 250,
+      marginBottom: 36,
+    } : {})
   },
   insightsContainer: {
     marginBottom: 24,
@@ -220,5 +385,25 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.text,
     lineHeight: 24,
+  },
+  debugContainer: {
+    padding: 10,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 5,
+    marginBottom: 16,
+  },
+  debugText: {
+    color: '#333',
+    marginBottom: 8,
+  },
+  reloadButton: {
+    backgroundColor: Colors.accent,
+    padding: 8,
+    borderRadius: 4,
+    alignItems: 'center',
+  },
+  reloadButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
   },
 }); 
