@@ -114,36 +114,6 @@ export default function VideoScreen() {
   // Handle status updates from the video player
   const handlePlaybackStatusUpdate = (status: AVPlaybackStatus) => {
     setStatus(status);
-    console.log('Video status update:', status);
-  };
-
-  // Function to reload video player
-  const reloadVideo = async () => {
-    if (videoRef.current && Platform.OS !== 'web') {
-      try {
-        // @ts-ignore - TypeScript doesn't recognize the replayAsync method
-        await videoRef.current.unloadAsync();
-        // @ts-ignore
-        await videoRef.current.loadAsync({ uri: video?.videoUrl }, { shouldPlay: false }, false);
-      } catch (err) {
-        console.error('Error reloading video:', err);
-      }
-    } else if (Platform.OS === 'web' && video) {
-      // For web, we'll just force a re-render
-      setVideo({...video});
-    }
-  };
-
-  // Get readable status for debugging
-  const getVideoStatusText = () => {
-    if (!status) return 'Not initialized';
-    if (!('isLoaded' in status)) return 'Loading or error state';
-    
-    if (status.isLoaded) {
-      return status.isPlaying ? 'Playing' : 'Paused';
-    } else {
-      return `Error: ${status.error}`;
-    }
   };
 
   // Render platform-specific video player
@@ -249,14 +219,6 @@ export default function VideoScreen() {
           <View style={styles.videoContainer}>
             {renderVideoPlayer()}
           </View>
-        </View>
-        
-        {/* Debug info */}
-        <View style={styles.debugContainer}>
-          <Text style={styles.debugText}>Player status: {getVideoStatusText()}</Text>
-          <TouchableOpacity style={styles.reloadButton} onPress={reloadVideo}>
-            <Text style={styles.reloadButtonText}>Reload Video</Text>
-          </TouchableOpacity>
         </View>
 
         <View style={styles.insightsContainer}>
@@ -385,25 +347,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.text,
     lineHeight: 24,
-  },
-  debugContainer: {
-    padding: 10,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 5,
-    marginBottom: 16,
-  },
-  debugText: {
-    color: '#333',
-    marginBottom: 8,
-  },
-  reloadButton: {
-    backgroundColor: Colors.accent,
-    padding: 8,
-    borderRadius: 4,
-    alignItems: 'center',
-  },
-  reloadButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
   },
 }); 
