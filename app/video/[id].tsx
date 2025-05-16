@@ -3,8 +3,13 @@ import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Dimensions, Touc
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AntDesign } from '@expo/vector-icons';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Colors from '@/constants/Colors';
 import { getVideo, VideoDetails } from '@/lib/api/videos';
+
+// Get window dimensions for responsive sizing
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 // Create a custom CSS style for the video player
 const videoStyles = Platform.OS === 'web' ? 
@@ -15,6 +20,9 @@ const videoStyles = Platform.OS === 'web' ?
     }
     #climb-coach-video-player {
       transform: rotate(0deg) !important;
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: contain !important;
     }
     #climb-coach-video-player:-webkit-full-screen {
       transform: rotate(0deg) !important;
@@ -40,6 +48,18 @@ export default function VideoScreen() {
   
   // Web-specific refs and effects - moved to component top level
   const videoContainerRef = useRef(null);
+  
+  // Navigation handler
+  const handleBackToHistory = () => {
+    router.push('/history');
+  };
+  
+  // Create a swipe gesture for back navigation
+  const swipeGesture = Gesture.Fling()
+    .direction(1)
+    .onEnd(() => {
+      handleBackToHistory();
+    });
   
   // Effect to inject custom CSS for web
   useEffect(() => {
@@ -128,9 +148,7 @@ export default function VideoScreen() {
           ref={videoContainerRef}
           style={{
             width: '100%',
-            aspectRatio: '16/9',
-            borderRadius: 12,
-            overflow: 'hidden',
+            height: '100%',
             backgroundColor: '#000',
             position: 'relative',
             transform: 'rotate(0deg)',
@@ -158,10 +176,11 @@ export default function VideoScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top']}>
         <Stack.Screen
           options={{
             headerTitle: '',
+            headerShown: false,
             headerShadowVisible: false,
             headerStyle: { backgroundColor: Colors.background },
           }}
@@ -176,10 +195,11 @@ export default function VideoScreen() {
 
   if (error || !video) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top']}>
         <Stack.Screen
           options={{
             headerTitle: '',
+            headerShown: false,
             headerShadowVisible: false,
             headerStyle: { backgroundColor: Colors.background },
           }}
@@ -192,54 +212,69 @@ export default function VideoScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <Stack.Screen
-        options={{
-          headerTitle: '',
-          headerShadowVisible: false,
-          headerStyle: { backgroundColor: Colors.background },
-        }}
-      />
-      
-      <ScrollView style={styles.content}>
-        <Text style={styles.title}>{video.title}</Text>
-        <View style={styles.metaContainer}>
-          <Text style={styles.metaText}>
-            {new Date(video.createdAt).toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'short',
-              day: 'numeric'
-            })}
-          </Text>
-          <Text style={styles.metaText}> • </Text>
-          <Text style={styles.metaText}>{"Indoor Climbing"}</Text>
+    <GestureDetector gesture={swipeGesture}>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <Stack.Screen
+          options={{
+            headerTitle: '',
+            headerShown: false,
+            headerShadowVisible: false,
+            headerStyle: { backgroundColor: Colors.background },
+          }}
+        />
+        
+        {/* Video player section - full width, top 60% of screen */}
+        <View style={styles.videoSection}>
+          {renderVideoPlayer()}
         </View>
-
-        <View style={styles.videoOuterContainer}>
-          <View style={styles.videoContainer}>
-            {renderVideoPlayer()}
+        
+        {/* Floating back button - now just an icon */}
+        <TouchableOpacity 
+          style={styles.floatingBackButton} 
+          onPress={handleBackToHistory}
+          activeOpacity={0.7}
+        >
+          <AntDesign name="arrowleft" size={24} color="white" />
+        </TouchableOpacity>
+        
+        {/* Scrollable content section */}
+        <ScrollView style={styles.content}>
+          <View style={styles.headerContainer}>
+            <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
+              {video.title}
+            </Text>
+            <View style={styles.metaContainer}>
+              <Text style={styles.metaText}>
+                {new Date(video.createdAt).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric'
+                })}
+              </Text>
+              <Text style={styles.metaText}> • </Text>
+              <Text style={styles.metaText}>{"Indoor Climbing"}</Text>
+            </View>
           </View>
-        </View>
 
-        <View style={styles.insightsContainer}>
-          <Text style={styles.insightsTitle}>Coaching Insights</Text>
-          {video.insights.length === 0 ? (
-            <Text style={styles.noInsightsText}>Analysis in progress...</Text>
-          ) : (
-            video.insights
-              .sort((a, b) => a.timestamp - b.timestamp)
-              .map((insight, index) => (
-                <View key={index} style={styles.insightItem}>
-                  <Text style={styles.timestamp}>
-                    {insight.timestamp.toFixed(1)}s
-                  </Text>
-                  <Text style={styles.insightText}>{insight.coaching}</Text>
-                </View>
-              ))
-          )}
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+          <View style={styles.insightsContainer}>
+            {video.insights.length === 0 ? (
+              <Text style={styles.noInsightsText}>Analysis in progress...</Text>
+            ) : (
+              video.insights
+                .sort((a, b) => a.timestamp - b.timestamp)
+                .map((insight, index) => (
+                  <View key={index} style={styles.insightItem}>
+                    <Text style={styles.timestamp}>
+                      {insight.timestamp.toFixed(1)}s
+                    </Text>
+                    <Text style={styles.insightText}>{insight.coaching}</Text>
+                  </View>
+                ))
+            )}
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </GestureDetector>
   );
 }
 
@@ -269,58 +304,56 @@ const styles = StyleSheet.create({
     color: Colors.error,
     textAlign: 'center',
   },
+  floatingBackButton: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 50 : 20,
+    left: 16,
+    zIndex: 100,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 24,
+    width: 48,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  videoSection: {
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT * 0.7,
+    backgroundColor: '#000',
+  },
   content: {
     flex: 1,
     padding: 16,
   },
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+    width: '100%',
+  },
   title: {
-    fontSize: 32,
+    fontSize: 20,
     fontWeight: 'bold',
     color: Colors.text,
-    marginBottom: 4,
+    flex: 1,
+    marginRight: 12,
   },
   metaContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    flexShrink: 0,
   },
   metaText: {
-    fontSize: 16,
+    fontSize: 14,
     color: Colors.muted,
-  },
-  videoOuterContainer: {
-    width: '100%',
-    marginBottom: 24,
-    paddingBottom: 40,
-  },
-  videoContainer: {
-    width: '100%',
-    aspectRatio: 16 / 9,
-    backgroundColor: '#000',
-    borderRadius: 12,
-    minHeight: 200,
-    ...(Platform.OS === 'web' ? {
-      position: 'relative',
-      zIndex: 1,
-    } : {})
   },
   video: {
     width: '100%',
     height: '100%',
-    borderRadius: 12,
-    ...(Platform.OS === 'web' ? {
-      minHeight: 250,
-      marginBottom: 36,
-    } : {})
   },
   insightsContainer: {
     marginBottom: 24,
-  },
-  insightsTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: Colors.text,
-    marginBottom: 16,
   },
   noInsightsText: {
     fontSize: 16,
