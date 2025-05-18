@@ -6,7 +6,7 @@ type LogoHeaderProps = {
   marginBottom?: number;
 };
 
-export default function LogoHeader({ marginBottom = 30 }: LogoHeaderProps) {
+export default function LogoHeader({ marginBottom = 15 }: LogoHeaderProps) {
   return (
     <View style={[styles.logoContainer, { marginBottom }]}>
       <Image 
@@ -21,11 +21,12 @@ export default function LogoHeader({ marginBottom = 30 }: LogoHeaderProps) {
 const styles = StyleSheet.create({
   logoContainer: {
     alignItems: 'center',
-    justifyContent: 'center',
-    height: 120,
+    justifyContent: 'flex-start',
+    height: 50,
+    paddingTop: 5,
   },
   logo: {
-    width: 120,
-    height: 100,
+    width: 60,
+    height: 50,
   }
 }); 

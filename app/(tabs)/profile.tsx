@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
     content: {
         flex: 1,
         padding: Spacing.md,
-        paddingTop: 80,
+        paddingTop: 30,
     },
     loadingContainer: {
         flex: 1,
