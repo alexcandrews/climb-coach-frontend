@@ -319,7 +319,7 @@ export const uploadVideoDirectToSupabase = async (
                         const end = Math.min(start + UPLOAD_CONFIG.CHUNK_SIZE, totalSize);
                         const chunkBlob = blob.slice(start, end);
                         const userId = user.id;
-                        const chunkPath = `${userId}/${userId}_${timestamp}.part${chunkIndex}`;
+                        const chunkPath = `${userId}/${userId}_${uploadId}.part${chunkIndex}`;
                         
                         // Add more detailed logging about the chunk
                         console.log(`📦 Preparing chunk ${chunkIndex+1}/${totalChunks}:`, {
@@ -376,7 +376,7 @@ export const uploadVideoDirectToSupabase = async (
                 
                 // Return success immediately - don't wait for processing
                 return { 
-                    url: `${supabase.storage.from('videos').getPublicUrl(`${user.id}/${user.id}_${timestamp}`).data.publicUrl}`,
+                    url: `${supabase.storage.from('videos').getPublicUrl(`${user.id}/${user.id}_${uploadId}`).data.publicUrl}`,
                     id: uploadId,
                     status: 'processing'
                 };
@@ -423,8 +423,7 @@ export const uploadVideoDirectToSupabase = async (
                 
                 // Use our own file path that works with current RLS policies
                 const userId = user.id;
-                const timestamp = Date.now();
-                const filePath = `${userId}/${userId}_${timestamp}`;
+                const filePath = `${userId}/${userId}_${uploadId}`;
                 
                 // Upload the file
                 const { data, error } = await supabase.storage
