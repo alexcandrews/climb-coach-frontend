@@ -160,7 +160,7 @@ export default function ProfileScreen() {
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView style={styles.content}>
-                <LogoHeader marginBottom={10} />
+                <LogoHeader marginBottom={60} />
                 
                 <View style={styles.profileHeader}>
                     <View style={styles.profileHeaderContent}>

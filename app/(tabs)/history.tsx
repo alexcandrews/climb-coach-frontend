@@ -187,7 +187,7 @@ export default function HistoryScreen() {
             
             <View style={styles.content}>
                 {/* LogoHeader with consistent spacing */}
-                <LogoHeader marginBottom={30} />
+                <LogoHeader marginBottom={60} />
                 
                 {error ? (
                     <View style={styles.errorContainer}>

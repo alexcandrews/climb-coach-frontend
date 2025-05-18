@@ -22,10 +22,27 @@ export default function TabLayout() {
     <RequireAuth>
       <Tabs
         screenOptions={{
-          tabBarActiveTintColor: Colors.accent,
-          tabBarInactiveTintColor: Colors.muted,
+          tabBarActiveTintColor: Colors.text,
+          tabBarInactiveTintColor: 'rgba(230, 239, 244, 0.6)',
           tabBarStyle: {
-            backgroundColor: Colors.background,
+            backgroundColor: Colors.accent,
+            borderTopWidth: 0,
+            elevation: 0,
+            height: 65,
+            paddingVertical: 5,
+          },
+          tabBarItemStyle: {
+            paddingVertical: 5,
+          },
+          tabBarIconStyle: {
+            width: 24,
+            height: 24,
+          },
+          tabBarLabelStyle: {
+            fontSize: 12,
+            fontWeight: '500',
+            marginTop: 0,
+            marginBottom: 4,
           },
           headerStyle: {
             backgroundColor: Colors.background,
@@ -39,7 +56,7 @@ export default function TabLayout() {
           options={{
             title: 'Upload',
             headerShown: false,
-            tabBarIcon: ({ color }) => <TabBarIcon name="cloud-upload" color={color} />,
+            tabBarIcon: ({ color }) => <TabBarIcon name="cloud-upload" color={color} size={22} />,
           }}
         />
         <Tabs.Screen
@@ -47,7 +64,7 @@ export default function TabLayout() {
           options={{
             title: 'History',
             headerShown: false,
-            tabBarIcon: ({ color }) => <TabBarIcon name="time" color={color} />,
+            tabBarIcon: ({ color }) => <TabBarIcon name="time" color={color} size={22} />,
           }}
         />
         <Tabs.Screen
@@ -55,7 +72,7 @@ export default function TabLayout() {
           options={{
             title: 'Profile',
             headerShown: false,
-            tabBarIcon: ({ color }) => <TabBarIcon name="person" color={color} />,
+            tabBarIcon: ({ color }) => <TabBarIcon name="person" color={color} size={22} />,
           }}
         />
       </Tabs>
