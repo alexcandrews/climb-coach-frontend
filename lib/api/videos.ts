@@ -327,7 +327,7 @@ export const uploadVideoDirectToSupabase = async (
                     
                     // Add to batch of parallel uploads
                     uploadPromises.push(
-                        uploadChunkWithRetry('videos', chunkPath, chunkBlob)
+                        uploadChunkWithRetry('video-chunks', chunkPath, chunkBlob)
                             .then(() => {
                                 // Update progress for each completed chunk
                                 uploadedChunks++;
@@ -368,7 +368,7 @@ export const uploadVideoDirectToSupabase = async (
             
             // Return success - backend will automatically combine chunks when all are uploaded
             return { 
-                url: `${supabase.storage.from('videos').getPublicUrl(`${user.id}/${user.id}_${uploadId}`).data.publicUrl}`,
+                url: `${supabase.storage.from('videos-complete').getPublicUrl(`${user.id}/${user.id}_${uploadId}`).data.publicUrl}`,
                 id: uploadId,
                 status: 'processing'
             };
