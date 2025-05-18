@@ -4,6 +4,9 @@ import supabase from '../supabase';
 import { v4 as uuidv4 } from 'uuid';
 import { UPLOAD_CONFIG } from '../config/upload';
 
+console.log('🔧 API Base URL:', api.defaults.baseURL || 'Not set');
+console.log('🔧 API Timeout:', api.defaults.timeout || 'Default');
+
 export interface UserVideo {
     id: string;
     name: string;
@@ -35,10 +38,10 @@ export interface CoachingInsight {
  * Upload result interface
  */
 export interface UploadResult {
-    url?: string;       // URL of the uploaded video
-    id?: string;        // ID of the video in the database
-    error?: string;     // Error message if upload failed
-    status: 'completed' | 'processing' | 'failed'; // Overall status of the upload/processing
+    url?: string;
+    id?: string;
+    status: 'uploading' | 'processing' | 'completed' | 'failed';
+    error?: string;
 }
 
 /**
@@ -46,6 +49,11 @@ export interface UploadResult {
  * @returns Promise with array of user videos
  */
 export const getUserVideos = async (): Promise<UserVideo[]> => {
+    console.log('🔧 API Call Info:', {
+        baseURL: api.defaults.baseURL,
+        method: 'GET',
+        endpoint: '/api/videos'
+    });
     try {
         const response = await api.get('/api/videos');
         if (response.status === 200 && response.data.videos) {
@@ -65,6 +73,11 @@ export const getUserVideos = async (): Promise<UserVideo[]> => {
  * @returns Promise with video details
  */
 export const getVideo = async (videoId: string): Promise<VideoDetails | null> => {
+    console.log('🔧 API Call Info:', {
+        baseURL: api.defaults.baseURL,
+        method: 'GET',
+        endpoint: `/api/videos/${videoId}`
+    });
     try {
         const response = await api.get(`/api/videos/${videoId}`);
         if (response.status === 200 && response.data) {
@@ -159,7 +172,7 @@ export const uploadVideo = async (
     console.log('⚠️ Using legacy upload method. Consider using uploadVideoDirectToSupabase instead.');
     try {
         // Use direct Supabase upload for all videos now
-        return uploadVideoDirectToSupabase(videoUri, onProgress);
+        return uploadVideoDirectToSupabase({ videoUri, onProgress });
     } catch (error: any) {
         console.error("Upload Error:", error);
         let errorMessage = "Error uploading video";
@@ -184,45 +197,65 @@ export const uploadVideo = async (
 /**
  * Uploads a video directly to Supabase Storage and notifies the backend for processing
  * The backend processing happens asynchronously after this function returns
- * @param videoUri The URI of the video to upload
- * @param onProgress Optional callback for upload progress
+ * @param params Upload parameters object
  * @returns Promise with upload result
  */
 export const uploadVideoDirectToSupabase = async (
-    videoUri: string,
-    onProgress?: (progress: number) => void
+    params: {
+        videoUri: string;
+        title?: string;
+        location?: string;
+        onProgress?: (progress: number) => void;
+    }
 ): Promise<UploadResult> => {
+    const { videoUri, title = 'Untitled Video', location, onProgress } = params;
+    
+    console.log('📣 uploadVideoDirectToSupabase called with params:', { 
+        videoUri: videoUri ? `${videoUri.substring(0, 30)}...` : null, 
+        title, 
+        location 
+    });
+    
     try {
         // Check authentication status
+        console.log('📣 Checking authentication status...');
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.access_token) {
+            console.error('❌ Authentication failed: No session token');
             throw new Error('Not authenticated');
         }
+        console.log('✅ User authenticated');
 
         // Get the user ID
+        console.log('📣 Getting user ID...');
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
+            console.error('❌ Authentication failed: No user found');
             throw new Error('User not found');
         }
+        console.log(`✅ User ID obtained: ${user.id.substring(0, 8)}...`);
 
         // Get the video blob
+        console.log('📣 Getting video blob...');
         let blob: Blob;
-        if (Platform.OS === "web") {
-            const response = await fetch(videoUri);
-            blob = await response.blob();
-        } else {
-            // For mobile platforms, fetch the blob
-            const response = await fetch(videoUri);
-            blob = await response.blob();
+        try {
+            if (Platform.OS === "web") {
+                const response = await fetch(videoUri);
+                blob = await response.blob();
+            } else {
+                // For mobile platforms, fetch the blob
+                const response = await fetch(videoUri);
+                blob = await response.blob();
+            }
+            console.log(`✅ Video blob obtained, size: ${(blob.size / (1024 * 1024)).toFixed(2)}MB, type: ${blob.type}`);
+        } catch (blobError: any) {
+            console.error('❌ Failed to get blob from videoUri:', blobError);
+            throw new Error(`Failed to get video data: ${blobError.message}`);
         }
 
         // Calculate total size
         const totalSize = blob.size;
         console.log(`📊 Video size: ${(totalSize / (1024 * 1024)).toFixed(2)}MB`);
-        
-        // Generate unique ID for the video
-        const fileId = uuidv4();
-        const fileName = `${user.id}/${fileId}.mp4`;
         
         // Start progress
         onProgress?.(5);
@@ -233,229 +266,231 @@ export const uploadVideoDirectToSupabase = async (
             
             // Set up chunk parameters
             const totalChunks = Math.ceil(totalSize / UPLOAD_CONFIG.CHUNK_SIZE);
-            let uploadedChunks = 0;
             
-            console.log(`📊 Splitting file into ${totalChunks} chunks of ${UPLOAD_CONFIG.CHUNK_SIZE / 1024} KB each with ${UPLOAD_CONFIG.MAX_CONCURRENT_UPLOADS} parallel uploads`);
+            // Initialize the upload with backend
+            console.log('🚀 ABOUT TO INITIALIZE upload with backend...');
+            console.log('🔧 API Call Info for initialization:', {
+                baseURL: api.defaults.baseURL,
+                method: 'POST',
+                endpoint: '/api/videos/upload/initialize',
+                data: {
+                    title,
+                    location,
+                    totalChunks,
+                    fileSize: totalSize,
+                    mimeType: blob.type || 'video/mp4'
+                }
+            });
             
-            // Process chunks in batches for controlled parallelism
-            for (let i = 0; i < totalChunks; i += UPLOAD_CONFIG.MAX_CONCURRENT_UPLOADS) {
-                const uploadPromises = [];
-                const batchSize = Math.min(UPLOAD_CONFIG.MAX_CONCURRENT_UPLOADS, totalChunks - i);
+            try {
+                const initResponse = await api.post('/api/videos/upload/initialize', {
+                    title,
+                    location,
+                    totalChunks,
+                    fileSize: totalSize,
+                    mimeType: blob.type || 'video/mp4'
+                });
+                console.log('✅ Upload initialization successful, response:', initResponse.data);
                 
-                // Create a batch of promises for concurrent upload
-                for (let j = 0; j < batchSize; j++) {
-                    const chunkIndex = i + j;
-                    const start = chunkIndex * UPLOAD_CONFIG.CHUNK_SIZE;
-                    const end = Math.min(start + UPLOAD_CONFIG.CHUNK_SIZE, totalSize);
-                    const chunkBlob = blob.slice(start, end);
-                    const chunkPath = `${fileName}.part${chunkIndex}`;
+                if (!initResponse.data.uploadId) {
+                    console.error('❌ Upload initialization failed: No upload ID in response');
+                    throw new Error('Failed to initialize upload: No upload ID received');
+                }
+                
+                const uploadId = initResponse.data.uploadId;
+                console.log(`✅ Upload initialized with ID: ${uploadId}`);
+                
+                // Generate timestamp for consistent file naming
+                const timestamp = Date.now();
+                
+                let uploadedChunks = 0;
+                
+                console.log(`📊 Splitting file into ${totalChunks} chunks of ${UPLOAD_CONFIG.CHUNK_SIZE / 1024} KB each with ${UPLOAD_CONFIG.MAX_CONCURRENT_UPLOADS} parallel uploads`);
+                
+                // Process chunks in batches for controlled parallelism
+                for (let i = 0; i < totalChunks; i += UPLOAD_CONFIG.MAX_CONCURRENT_UPLOADS) {
+                    const uploadPromises = [];
+                    const batchSize = Math.min(UPLOAD_CONFIG.MAX_CONCURRENT_UPLOADS, totalChunks - i);
                     
-                    // Add more detailed logging about the chunk
-                    console.log(`📦 Preparing chunk ${chunkIndex+1}/${totalChunks}:`, {
-                        path: chunkPath,
-                        size: chunkBlob.size,
-                        start,
-                        end
+                    // Create a batch of promises for concurrent upload
+                    for (let j = 0; j < batchSize; j++) {
+                        const chunkIndex = i + j;
+                        const start = chunkIndex * UPLOAD_CONFIG.CHUNK_SIZE;
+                        const end = Math.min(start + UPLOAD_CONFIG.CHUNK_SIZE, totalSize);
+                        const chunkBlob = blob.slice(start, end);
+                        const userId = user.id;
+                        const chunkPath = `${userId}/${userId}_${timestamp}.part${chunkIndex}`;
+                        
+                        // Add more detailed logging about the chunk
+                        console.log(`📦 Preparing chunk ${chunkIndex+1}/${totalChunks}:`, {
+                            path: chunkPath,
+                            size: chunkBlob.size,
+                            start,
+                            end
+                        });
+                        
+                        // Add to batch of parallel uploads
+                        uploadPromises.push(
+                            uploadChunkWithRetry('videos', chunkPath, chunkBlob)
+                                .then(() => {
+                                    // Update progress for each completed chunk
+                                    uploadedChunks++;
+                                    const progress = Math.min(Math.round((uploadedChunks / totalChunks) * 90) + 5, 95);
+                                    onProgress?.(progress);
+                                    console.log(`✅ Chunk ${chunkIndex+1}/${totalChunks} uploaded successfully (${((uploadedChunks/totalChunks)*100).toFixed(0)}%) to ${chunkPath}`);
+                                    
+                                    // Update the backend about chunk progress
+                                    // This is a fire-and-forget call - we don't wait for response
+                                    api.post('/api/videos/update-chunk-progress', {
+                                        uploadId: uploadId,
+                                        uploadedChunks: uploadedChunks
+                                    }).catch(error => {
+                                        console.warn('⚠️ Failed to update chunk progress:', error);
+                                    });
+                                })
+                                .catch(error => {
+                                    console.error(`❌ Failed to upload chunk ${chunkIndex+1}/${totalChunks}:`, error);
+                                    throw error; // Re-throw to be caught by Promise.all
+                                })
+                        );
+                    }
+                    
+                    // Wait for current batch to complete before moving to next batch
+                    try {
+                        await Promise.all(uploadPromises);
+                        console.log(`✅ Batch ${i/UPLOAD_CONFIG.MAX_CONCURRENT_UPLOADS + 1} completed successfully`);
+                    } catch (batchError: any) {
+                        console.error(`❌ Error in upload batch:`, batchError);
+                        throw new Error(`Failed to upload batch: ${batchError.message}`);
+                    }
+                }
+                
+                console.log(`✅ Successfully uploaded all ${totalChunks} chunks in parallel`);
+                
+                // Update progress to indicate completion of upload
+                onProgress?.(100);
+                
+                // Notify the backend to combine chunks
+                try {
+                    console.log('🔄 Notifying backend to combine chunks...');
+                    const basePath = `${user.id}/${user.id}_${timestamp}`;
+                    const combineResponse = await api.post('/api/videos/combine-chunks', {
+                        uploadId: uploadId,
+                        totalChunks: totalChunks,
+                        basePath: basePath
+                    });
+                    console.log('✅ Backend notified to process chunks', combineResponse.data);
+                } catch (error) {
+                    console.error('❌ Error notifying backend to process chunks:', error);
+                    console.error('Response details:', (error as any).response?.data);
+                    // Continue despite error, as the chunks are already uploaded
+                }
+                
+                // Return success immediately - don't wait for processing
+                return { 
+                    url: `${supabase.storage.from('videos').getPublicUrl(`${user.id}/${user.id}_${timestamp}`).data.publicUrl}`,
+                    id: uploadId,
+                    status: 'processing'
+                };
+            } catch (initError: any) {
+                console.error('❌ Upload initialization failed:', initError);
+                console.error('Error details:', initError.response?.data || initError.message);
+                throw new Error(`Failed to initialize upload: ${initError.message}`);
+            }
+        } else {
+            console.log('📤 Using single upload directly to Supabase Storage');
+            
+            // Initialize the upload with backend
+            console.log('🚀 ABOUT TO INITIALIZE upload with backend for single file...');
+            console.log('🔧 API Call Info for initialization:', {
+                baseURL: api.defaults.baseURL,
+                method: 'POST',
+                endpoint: '/api/videos/upload/initialize',
+                data: {
+                    title,
+                    location,
+                    totalChunks: 1,
+                    fileSize: totalSize,
+                    mimeType: blob.type || 'video/mp4'
+                }
+            });
+            
+            try {
+                const initResponse = await api.post('/api/videos/upload/initialize', {
+                    title,
+                    location,
+                    totalChunks: 1, // Single chunk for small files
+                    fileSize: totalSize,
+                    mimeType: blob.type || 'video/mp4'
+                });
+                console.log('✅ Upload initialization successful, response:', initResponse.data);
+                
+                if (!initResponse.data.uploadId) {
+                    console.error('❌ Upload initialization failed: No upload ID in response');
+                    throw new Error('Failed to initialize upload: No upload ID received');
+                }
+                
+                const uploadId = initResponse.data.uploadId;
+                console.log(`✅ Upload initialized with ID: ${uploadId}`);
+                
+                // Use our own file path that works with current RLS policies
+                const userId = user.id;
+                const timestamp = Date.now();
+                const filePath = `${userId}/${userId}_${timestamp}`;
+                
+                // Upload the file
+                const { data, error } = await supabase.storage
+                    .from('videos')
+                    .upload(filePath, blob, {
+                        contentType: 'video/mp4',
+                        upsert: true,
                     });
                     
-                    // Add to batch of parallel uploads
-                    uploadPromises.push(
-                        uploadChunkWithRetry('videos', chunkPath, chunkBlob)
-                            .then(() => {
-                                // Update progress for each completed chunk
-                                uploadedChunks++;
-                                const progress = Math.min(Math.round((uploadedChunks / totalChunks) * 90) + 5, 95);
-                                onProgress?.(progress);
-                                console.log(`✅ Chunk ${chunkIndex+1}/${totalChunks} uploaded successfully (${((uploadedChunks/totalChunks)*100).toFixed(0)}%) to ${chunkPath}`);
-                            })
-                            .catch(error => {
-                                console.error(`❌ Failed to upload chunk ${chunkIndex+1}/${totalChunks}:`, error);
-                                throw error; // Re-throw to be caught by Promise.all
-                            })
-                    );
+                if (error) throw error;
+                
+                // Update progress
+                onProgress?.(100);
+                
+                // Get public URL for the uploaded file
+                const { data: publicUrl } = supabase.storage
+                    .from('videos')
+                    .getPublicUrl(filePath);
+                    
+                if (!publicUrl?.publicUrl) {
+                    throw new Error('Failed to get public URL for uploaded video');
                 }
                 
-                // Wait for current batch to complete before moving to next batch
+                // Notify the backend about the completed upload
                 try {
-                    await Promise.all(uploadPromises);
-                    console.log(`✅ Batch ${i/UPLOAD_CONFIG.MAX_CONCURRENT_UPLOADS + 1} completed successfully`);
-                } catch (batchError: any) {
-                    console.error(`❌ Error in upload batch:`, batchError);
-                    throw new Error(`Failed to upload batch: ${batchError.message}`);
+                    console.log('🔄 Notifying backend about completed upload...');
+                    const processResponse = await api.post('/api/videos/process-external-upload', {
+                        uploadId: uploadId, // Use the ID from initialization
+                        filePath: filePath, // Also send the storage path
+                        status: 'processing',
+                        uploadedChunks: 1,
+                        totalChunks: 1
+                    });
+                    console.log('✅ Backend notified about completed upload', processResponse.data);
+                } catch (error) {
+                    console.error('❌ Error notifying backend about completed upload:', error);
+                    console.error('Response details:', (error as any).response?.data);
+                    // Continue despite error, as the file is already uploaded
                 }
-            }
-            
-            console.log(`✅ Successfully uploaded all ${totalChunks} chunks in parallel`);
-            
-            // Update progress to indicate completion of upload
-            onProgress?.(100);
-            
-            // Get public URL base that will be used after processing
-            const { data: publicUrl } = supabase.storage
-                .from('videos')
-                .getPublicUrl(fileName);
-            
-            // After successful upload, create the database record
-            console.log('✅ Upload complete. Database record creation and processing are commented out for now');
-            
-            /* COMMENTED OUT: Database record creation and backend notification
-            console.log('📝 Creating database record for video after successful upload');
-            let dbCreateSuccess = false; // Track if database creation succeeded
-            try {
-                console.log(`Creating record with video ID: ${fileId}`);
-                console.log(`User ID: ${user.id}`);
-                console.log(`File size: ${totalSize}`);
                 
-                const response = await api.post('/api/videos/create-record', {
-                    videoId: fileId,
-                    userId: user.id,
-                    title: 'Untitled Video', // Will be updated later
-                    size: totalSize,
-                    contentType: 'video/mp4',
+                return { 
+                    url: publicUrl.publicUrl,
+                    id: uploadId,
                     status: 'processing'
-                });
-                console.log('✅ Created database record for video', response.data);
-                dbCreateSuccess = true;
-            } catch (dbError: any) {
-                console.error('❌ Failed to create database record:', dbError);
-                console.error('Response details:', dbError.response?.data);
-                console.log('⚠️ Will notify backend directly about the uploaded video');
+                };
+            } catch (initError: any) {
+                console.error('❌ Upload initialization failed:', initError);
+                console.error('Error details:', initError.response?.data || initError.message);
+                throw new Error(`Failed to initialize upload: ${initError.message}`);
             }
-            
-            // Notify the backend to combine chunks async - don't wait for response
-            // Add retry logic with exponential backoff
-            const notifyBackendWithRetry = (attempt = 1, maxAttempts = 5, initialDelay = 2000) => {
-                console.log(`Sending combine-chunks request (attempt ${attempt}/${maxAttempts})`);
-                console.log(`Request data:`, {
-                    videoId: fileId,
-                    userId: user.id,
-                    fileName: fileName,
-                    totalChunks: totalChunks,
-                    contentType: 'video/mp4',
-                    size: totalSize,
-                });
-                
-                api.post('/api/videos/combine-chunks', {
-                    videoId: fileId,
-                    userId: user.id,
-                    fileName: fileName,
-                    totalChunks: totalChunks,
-                    contentType: 'video/mp4',
-                    size: totalSize,
-                }).then(response => {
-                    console.log('✅ Backend notified to process chunks', response.data);
-                }).catch(error => {
-                    console.error(`❌ Error notifying backend to process chunks (attempt ${attempt}/${maxAttempts}):`, error);
-                    console.error('Response details:', error.response?.data);
-                    
-                    if (attempt < maxAttempts) {
-                        // Use exponential backoff with jitter
-                        const delay = initialDelay * Math.pow(2, attempt - 1) * (0.75 + Math.random() * 0.5);
-                        console.log(`⏱️ Retrying backend notification in ${Math.round(delay/1000)}s...`);
-                        
-                        setTimeout(() => {
-                            notifyBackendWithRetry(attempt + 1, maxAttempts, initialDelay);
-                        }, delay);
-                    } else {
-                        console.error('❌ Failed to notify backend after multiple attempts. User should check history later.');
-                    }
-                });
-            };
-            
-            // Start the retry process
-            notifyBackendWithRetry();
-            */
-                
-            // Return success immediately - don't wait for processing
-            return { 
-                url: publicUrl?.publicUrl,
-                id: fileId,
-                status: 'processing'
-            };
-        } else {
-            // For smaller files, use single upload
-            console.log('📤 Using single upload directly to Supabase Storage');
-            const { data, error } = await supabase.storage
-                .from('videos')
-                .upload(fileName, blob, {
-                    contentType: 'video/mp4',
-                    upsert: true,
-                });
-                
-            if (error) throw error;
-            
-            // Update progress
-            onProgress?.(100);
-            
-            // Get public URL for the uploaded file
-            const { data: publicUrl } = supabase.storage
-                .from('videos')
-                .getPublicUrl(fileName);
-                
-            if (!publicUrl?.publicUrl) {
-                throw new Error('Failed to get public URL for uploaded video');
-            }
-            
-            console.log('✅ Upload complete. Database record creation and processing are commented out for now');
-            
-            /* COMMENTED OUT: Backend notification
-            // Now notify the backend about the uploaded video to trigger AI analysis
-            // Don't wait for response - do it asynchronously
-            const notifyBackendWithRetry = (attempt = 1, maxAttempts = 5, initialDelay = 2000) => {
-                api.post('/api/videos/process-external-upload', {
-                    videoUrl: publicUrl.publicUrl,
-                    videoId: fileId,
-                    fileName: `upload.mp4`,
-                    contentType: 'video/mp4',
-                    size: totalSize,
-                }).then(response => {
-                    console.log('✅ Backend notified about uploaded video for processing', response.data);
-                }).catch(error => {
-                    console.error(`❌ Error notifying backend about upload (attempt ${attempt}/${maxAttempts}):`, error);
-                    
-                    if (attempt < maxAttempts) {
-                        // Use exponential backoff with jitter
-                        const delay = initialDelay * Math.pow(2, attempt - 1) * (0.75 + Math.random() * 0.5);
-                        console.log(`⏱️ Retrying backend notification in ${Math.round(delay/1000)}s...`);
-                        
-                        setTimeout(() => {
-                            notifyBackendWithRetry(attempt + 1, maxAttempts, initialDelay);
-                        }, delay);
-                    } else {
-                        console.error('❌ Failed to notify backend after multiple attempts. User should check history later.');
-                    }
-                });
-            };
-            
-            // Start the retry process
-            notifyBackendWithRetry();
-            */
-            
-            // Return success immediately - don't wait for processing
-            return {
-                url: publicUrl.publicUrl,
-                id: fileId,
-                status: 'completed'
-            };
         }
     } catch (error: any) {
-        console.error("❌ Direct Upload Error:", error);
-        let errorMessage = "Error uploading video";
-        
-        if (error.response) {
-            // Server responded with error
-            const data = error.response.data;
-            errorMessage = data?.error || data?.details || data?.message || 
-                `Server error: ${error.response.status}`;
-        } else if (error.request) {
-            // Request made but no response
-            errorMessage = "No response from server. Check your internet connection.";
-        } else {
-            // Error in request setup
-            errorMessage = error.message || "Failed to make request";
-        }
-        
-        return { error: errorMessage, status: 'failed' };
+        console.error('❌ Error uploading video:', error);
+        throw error;
     }
 };
 

@@ -41,16 +41,21 @@ export default function VideoUploadDetailsScreen() {
             
             if (videoUri) {
                 // Use direct Supabase upload for better performance and reliability
-                const result = await uploadVideoDirectToSupabase(videoUri as string, (progress) => {
-                    setUploadProgress(progress);
-                    
-                    // Set status message based on progress
-                    if (progress < 90) {
-                        setStatus(`Uploading video: ${progress}%`);
-                    } else if (progress < 100) {
-                        setStatus('Finalizing upload...');
-                    } else {
-                        setStatus('Upload complete!');
+                const result = await uploadVideoDirectToSupabase({
+                    videoUri: videoUri as string,
+                    title: title.trim(),
+                    location: location.trim() || undefined,
+                    onProgress: (progress) => {
+                        setUploadProgress(progress);
+                        
+                        // Set status message based on progress
+                        if (progress < 90) {
+                            setStatus(`Uploading video: ${progress}%`);
+                        } else if (progress < 100) {
+                            setStatus('Finalizing upload...');
+                        } else {
+                            setStatus('Upload complete!');
+                        }
                     }
                 });
                 

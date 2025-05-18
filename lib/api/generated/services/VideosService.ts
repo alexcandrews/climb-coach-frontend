@@ -233,39 +233,23 @@ export class VideosService {
     public postApiVideosProcessExternalUpload(
         requestBody: {
             /**
-             * Public URL of the video in Supabase storage
+             * Unique ID for the video from initialization
              */
-            videoUrl: string;
+            uploadId: string;
             /**
-             * Unique ID for the video
+             * Updated status for the video
              */
-            videoId: string;
+            status?: string;
             /**
-             * Original file name
+             * Number of chunks uploaded (should be 1 for small files)
              */
-            fileName?: string;
+            uploadedChunks?: number;
             /**
-             * MIME type of the video
+             * Total number of chunks (should be 1 for small files)
              */
-            contentType?: string;
-            /**
-             * Size of the video in bytes
-             */
-            size?: number;
-            /**
-             * Title for the video
-             */
-            title?: string;
-            /**
-             * Location where the video was recorded
-             */
-            location?: string;
+            totalChunks?: number;
         },
     ): CancelablePromise<{
-        /**
-         * URL of the uploaded video
-         */
-        url?: string;
         /**
          * ID of the video
          */
@@ -275,7 +259,7 @@ export class VideosService {
          */
         message?: string;
         /**
-         * Upload timestamp
+         * Timestamp of processing
          */
         timestamp?: string;
     }> {
@@ -287,6 +271,8 @@ export class VideosService {
             errors: {
                 400: `Invalid request`,
                 401: `Not authenticated`,
+                403: `Not authorized`,
+                404: `Video not found`,
                 500: `Server error`,
             },
         });
@@ -359,6 +345,110 @@ export class VideosService {
                 400: `Invalid request`,
                 401: `Not authenticated`,
                 403: `Permission denied`,
+                500: `Server error`,
+            },
+        });
+    }
+    /**
+     * Initialize a video upload by creating a database record
+     * @param requestBody
+     * @returns any Upload initialized successfully
+     * @throws ApiError
+     */
+    public postApiVideosUploadInitialize(
+        requestBody: {
+            /**
+             * Title of the video provided by the user
+             */
+            title: string;
+            /**
+             * Location where the video was recorded (optional)
+             */
+            location?: string;
+            /**
+             * Total number of chunks to be uploaded
+             */
+            totalChunks: number;
+            /**
+             * Total size of the file in bytes
+             */
+            fileSize: number;
+            /**
+             * MIME type of the video file
+             */
+            mimeType: string;
+        },
+    ): CancelablePromise<{
+        /**
+         * Unique ID for the upload
+         */
+        uploadId?: string;
+        /**
+         * File name pattern to use for chunk uploads
+         */
+        fileName?: string;
+        /**
+         * Success message
+         */
+        message?: string;
+        /**
+         * Initialization timestamp
+         */
+        timestamp?: string;
+    }> {
+        return this.httpRequest.request({
+            method: 'POST',
+            url: '/api/videos/upload/initialize',
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Missing required fields`,
+                401: `User not authenticated`,
+                500: `Server error`,
+            },
+        });
+    }
+    /**
+     * Update the chunk progress for an ongoing upload
+     * @param requestBody
+     * @returns any Chunk progress updated successfully
+     * @throws ApiError
+     */
+    public postApiVideosUpdateChunkProgress(
+        requestBody: {
+            /**
+             * The upload ID returned from initialize
+             */
+            uploadId: string;
+            /**
+             * Number of chunks uploaded so far
+             */
+            uploadedChunks: number;
+        },
+    ): CancelablePromise<{
+        /**
+         * The upload ID
+         */
+        uploadId?: string;
+        /**
+         * Number of chunks uploaded
+         */
+        uploadedChunks?: number;
+        /**
+         * Success message
+         */
+        message?: string;
+    }> {
+        return this.httpRequest.request({
+            method: 'POST',
+            url: '/api/videos/update-chunk-progress',
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Missing required fields`,
+                401: `User not authenticated`,
+                403: `User doesn't own this upload`,
+                404: `Upload not found`,
                 500: `Server error`,
             },
         });
