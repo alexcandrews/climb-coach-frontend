@@ -233,11 +233,9 @@ export default function HistoryScreen() {
                                         </View>
                                     </View>
                                     <View style={styles.videoInfo}>
-                                        {item.title ? (
-                                            <Text style={styles.videoName}>{item.title}</Text>
-                                        ) : (
-                                            <Text style={styles.videoName}>Untitled Climb</Text>
-                                        )}
+                                        <Text style={styles.videoName}>
+                                            {item.title || 'Untitled Climb'}
+                                        </Text>
                                         <Text style={styles.videoDate}>
                                             {item.createdAt ? formatDate(item.createdAt) : 'Unknown date'}
                                         </Text>
