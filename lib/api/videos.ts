@@ -159,8 +159,9 @@ const uploadChunkWithRetry = async (
 };
 
 /**
- * Uploads a video to the server (legacy method)
- * This method is kept for backward compatibility but uploadVideoDirectToSupabase is preferred
+ * Uploads a video to the server using chunked upload approach
+ * This is a wrapper around uploadVideoDirectToSupabase for backward compatibility
+ * All uploads now use the chunked upload approach regardless of size
  * @param videoUri The URI of the video to upload
  * @param onProgress Optional callback for upload progress
  * @returns Promise with upload result
@@ -169,9 +170,9 @@ export const uploadVideo = async (
     videoUri: string,
     onProgress?: (progress: number) => void
 ): Promise<UploadResult> => {
-    console.log('⚠️ Using legacy upload method. Consider using uploadVideoDirectToSupabase instead.');
+    console.log('🧩 Using standard chunked upload approach');
     try {
-        // Use direct Supabase upload for all videos now
+        // All videos now use the chunked upload approach
         return uploadVideoDirectToSupabase({ videoUri, onProgress });
     } catch (error: any) {
         console.error("Upload Error:", error);
