@@ -370,21 +370,9 @@ export const uploadVideoDirectToSupabase = async (
                 // Update progress to indicate completion of upload
                 onProgress?.(100);
                 
-                // Notify the backend to combine chunks
-                try {
-                    console.log('🔄 Notifying backend to combine chunks...');
-                    const basePath = `${user.id}/${user.id}_${timestamp}`;
-                    const combineResponse = await api.post('/api/videos/combine-chunks', {
-                        uploadId: uploadId,
-                        totalChunks: totalChunks,
-                        basePath: basePath
-                    });
-                    console.log('✅ Backend notified to process chunks', combineResponse.data);
-                } catch (error) {
-                    console.error('❌ Error notifying backend to process chunks:', error);
-                    console.error('Response details:', (error as any).response?.data);
-                    // Continue despite error, as the chunks are already uploaded
-                }
+                // We no longer need to explicitly call combine-chunks
+                // The backend will automatically combine chunks when all are uploaded
+                // through the automatic trigger in updateChunkProgress
                 
                 // Return success immediately - don't wait for processing
                 return { 
