@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, Alert, TouchableOpacity, Dimensions, SafeAreaView } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, TextInput, StyleSheet, Alert, Dimensions, SafeAreaView, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { Video, ResizeMode } from 'expo-av';
 import { uploadVideoDirectToSupabase /* , updateVideoMetadata */ } from '@/lib/api/videos';
@@ -7,11 +7,36 @@ import api from '@/lib/api';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '@/constants/Colors';
 import StyledButton from '@/components/StyledButton';
-import LogoHeader from '@/components/LogoHeader';
 import Spacing from '@/constants/Spacing';
 import BorderRadius from '@/constants/BorderRadius';
 import Shadows from '@/constants/Shadows';
 import * as Progress from 'react-native-progress';
+import VideoPlayer from '../components/VideoPlayer';
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+const videoStyles = Platform.OS === 'web' ? 
+  `
+    #climb-coach-upload-video-container,
+    #climb-coach-upload-video-container * {
+      transform: rotate(0deg) !important;
+    }
+    #climb-coach-upload-video-player {
+      transform: rotate(0deg) !important;
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: contain !important;
+    }
+    #climb-coach-upload-video-player:-webkit-full-screen {
+      transform: rotate(0deg) !important;
+    }
+    #climb-coach-upload-video-player::-webkit-media-controls {
+      transform: rotate(0deg) !important;
+    }
+    #climb-coach-upload-video-player::-webkit-media-controls-timeline {
+      transform: rotate(0deg) !important;
+    }
+  ` : '';
 
 export default function VideoUploadDetailsScreen() {
     const router = useRouter();
@@ -20,14 +45,42 @@ export default function VideoUploadDetailsScreen() {
     const [location, setLocation] = useState('');
     const [uploading, setUploading] = useState(false);
     const [status, setStatus] = useState('');
-    const [aspectRatio, setAspectRatio] = useState(16 / 9);
     const [uploadProgress, setUploadProgress] = useState(0);
     
-    // Use dimensions to calculate a good size for the video
-    const windowWidth = Dimensions.get('window').width;
-    const windowHeight = Dimensions.get('window').height;
-    const MAX_VIDEO_HEIGHT = windowHeight * 0.4; // Reduced to make room for tab bar
-    const videoWidth = windowWidth - 48; // Account for container padding
+    const videoRef = useRef<Video>(null);
+    const videoContainerRef = useRef(null);
+
+    // Inject CSS for web video player
+    useEffect(() => {
+      if (Platform.OS === 'web') {
+        const styleElement = document.createElement('style');
+        styleElement.textContent = videoStyles;
+        document.head.appendChild(styleElement);
+        return () => {
+          document.head.removeChild(styleElement);
+        };
+      }
+    }, []);
+
+    // Inject video element for web
+    useEffect(() => {
+      if (Platform.OS === 'web' && videoContainerRef.current && videoUri) {
+        const container = videoContainerRef.current as HTMLDivElement;
+        container.innerHTML = '';
+        const videoElement = document.createElement('video');
+        videoElement.id = 'climb-coach-upload-video-player';
+        videoElement.src = videoUri as string;
+        videoElement.controls = true;
+        videoElement.playsInline = true;
+        videoElement.style.width = '100%';
+        videoElement.style.height = '100%';
+        videoElement.style.objectFit = 'contain';
+        videoElement.style.transform = 'rotate(0deg)';
+        container.appendChild(videoElement);
+      }
+    }, [videoUri, videoContainerRef.current]);
+
+    const handleSelectVideo = () => {};
 
     const handleUpload = async () => {
         if (!title.trim()) {
@@ -64,20 +117,6 @@ export default function VideoUploadDetailsScreen() {
                     throw new Error(result.error);
                 }
                 
-                // Update metadata if we have an ID
-                /*
-                if (result.id) {
-                    try {
-                        await updateVideoMetadata(result.id, {
-                            title: title.trim(),
-                            location: location.trim() || undefined
-                        });
-                    } catch (metadataError) {
-                        console.warn('Failed to update video metadata, but upload was successful:', metadataError);
-                    }
-                }
-                */
-                
                 setStatus('Upload successful!');
                 
                 // Navigate immediately and show toast/alert after navigation
@@ -106,33 +145,39 @@ export default function VideoUploadDetailsScreen() {
         }
     };
 
-    const handleClose = () => {
-        // Go back to the upload tab
-        router.replace('/(tabs)/upload');
-    };
-
     return (
         <View style={styles.container}>
             <Stack.Screen 
                 options={{
-                    headerShown: true,
-                    headerTitle: '', 
-                    headerStyle: {
-                        backgroundColor: Colors.background,
-                    },
-                    headerShadowVisible: false,
-                    headerLeft: () => null, // Hide the back button
-                    headerRight: () => (
-                        <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
-                            <Ionicons name="close" size={28} color={Colors.text} />
-                        </TouchableOpacity>
-                    ),
+                    headerShown: false,
                 }} 
             />
             
+            {/* Video player at the top */}
+            <View style={styles.videoContainer}>
+                {Platform.OS === 'web' ? (
+                  <div
+                    id="climb-coach-upload-video-container"
+                    ref={videoContainerRef}
+                    style={{ width: '100%', height: '100%', backgroundColor: '#000' }}
+                  />
+                ) : (
+                  videoUri && (
+                    <Video
+                      ref={videoRef}
+                      style={styles.nativeVideo}
+                      source={{ uri: videoUri as string }}
+                      resizeMode={ResizeMode.CONTAIN}
+                      useNativeControls
+                      isLooping={false}
+                      shouldPlay={false}
+                    />
+                  )
+                )}
+            </View>
+
             <SafeAreaView style={styles.wrapper}>
                 <View style={styles.content}>
-                    <LogoHeader marginBottom={20} />
                     <Text style={styles.header}>Preview & Upload</Text>
                     
                     {/* Status and progress */}
@@ -149,36 +194,6 @@ export default function VideoUploadDetailsScreen() {
                             />
                         </View>
                     )}
-                    
-                    {/* Video container with dynamic aspect ratio */}
-                    <View style={styles.videoContainer}>
-                        <Video
-                            source={{ uri: videoUri as string }}
-                            style={{
-                                width: '100%',
-                                height: undefined,
-                                aspectRatio: aspectRatio,
-                                maxHeight: MAX_VIDEO_HEIGHT,
-                            }}
-                            useNativeControls
-                            resizeMode={ResizeMode.CONTAIN}
-                            shouldPlay
-                            isMuted
-                            isLooping
-                            onLoad={(status) => {
-                                if (status.isLoaded) {
-                                    // Type assertion for naturalSize property
-                                    const statusWithSize = status as any;
-                                    if (statusWithSize.naturalSize) {
-                                        const { width, height } = statusWithSize.naturalSize;
-                                        if (width && height) {
-                                            setAspectRatio(width / height);
-                                        }
-                                    }
-                                }
-                            }}
-                        />
-                    </View>
                     
                     <View style={styles.formSection}>
                         <TextInput
@@ -218,6 +233,15 @@ const styles = StyleSheet.create({
         flex: 1, 
         backgroundColor: Colors.background 
     },
+    videoContainer: {
+        width: '100%',
+        height: SCREEN_HEIGHT * 0.6,
+        backgroundColor: '#000',
+    },
+    nativeVideo: {
+        width: '100%',
+        height: '100%',
+    },
     wrapper: {
         flex: 1,
         alignItems: 'center',
@@ -225,10 +249,10 @@ const styles = StyleSheet.create({
     content: {
         flex: 1,
         width: '100%',
-        maxWidth: 500, // Maximum width to prevent stretching on tablets/web
-        paddingHorizontal: Spacing.md, // Consistent padding from constants
-        paddingBottom: 80, // Add bottom padding to account for tab bar
-        paddingTop: 0, // Reduce top padding since we have the logo
+        maxWidth: 500,
+        paddingHorizontal: Spacing.md,
+        paddingBottom: 80,
+        paddingTop: Spacing.lg,
     },
     header: { 
         fontSize: 24, 
@@ -253,15 +277,6 @@ const styles = StyleSheet.create({
         height: 8,
         borderRadius: 4,
         width: '100%',
-    },
-    videoContainer: {
-        backgroundColor: '#000',
-        marginBottom: Spacing.lg,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderRadius: BorderRadius.md,
-        overflow: 'hidden',
-        ...Shadows.sm,
     },
     formSection: {
         width: '100%',

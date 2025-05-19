@@ -14,6 +14,8 @@ interface VideoPlayerProps {
     onLoadComplete?: (duration: number) => void;
     onPositionChange?: (position: number) => void;
     seekTo?: number;
+    hideUploadButton?: boolean;
+    style?: any; // Allow custom styling
 }
 
 export default function VideoPlayer({ 
@@ -22,12 +24,15 @@ export default function VideoPlayer({
     onSelectVideo, 
     onLoadComplete,
     onPositionChange,
-    seekTo 
+    seekTo,
+    hideUploadButton = false,
+    style
 }: VideoPlayerProps) {
     const [isPlaying, setIsPlaying] = useState(false);
     const [isSeeking, setIsSeeking] = useState(false);
     const lastReportedPosition = useRef(0);
     const webVideoElement = useRef<HTMLVideoElement | null>(null);
+    const isWeb = Platform.OS === 'web';
 
     // Cleanup web video event listeners
     useEffect(() => {
@@ -109,29 +114,39 @@ export default function VideoPlayer({
     };
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, style]}>
             {videoUri ? (
-                <TouchableWithoutFeedback onPress={handlePlayPause}>
-                    <View style={styles.videoContainer}>
+                isWeb ? (
+                    <View style={styles.webAspectRatioBox}>
                         <Video
                             ref={videoRef}
-                            style={styles.video}
+                            style={styles.webVideo}
                             source={typeof videoUri === 'string' ? { uri: videoUri } : videoUri}
-                            resizeMode={ResizeMode.COVER}
-                            isLooping={false}
-                            isMuted={true}
+                            resizeMode={ResizeMode.CONTAIN}
+                            isLooping={true}
+                            useNativeControls={true}
                             shouldPlay={false}
                             onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
                             onLoad={handleLoad}
                             progressUpdateIntervalMillis={500}
                         />
-                        {!isPlaying && (
-                            <View style={styles.playOverlay}>
-                                <Text style={styles.playIcon}>▶️</Text>
-                            </View>
-                        )}
                     </View>
-                </TouchableWithoutFeedback>
+                ) : (
+                    <View style={styles.videoContainer}>
+                        <Video
+                            ref={videoRef}
+                            style={styles.video}
+                            source={typeof videoUri === 'string' ? { uri: videoUri } : videoUri}
+                            resizeMode={ResizeMode.CONTAIN}
+                            isLooping={true}
+                            useNativeControls={true}
+                            shouldPlay={false}
+                            onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
+                            onLoad={handleLoad}
+                            progressUpdateIntervalMillis={500}
+                        />
+                    </View>
+                )
             ) : (
                 <View style={[styles.uploadPrompt, styles.center]}>
                     <Ionicons name="cloud-upload-outline" size={48} color="#666" />
@@ -139,35 +154,48 @@ export default function VideoPlayer({
                 </View>
             )}
             
-            <TouchableOpacity 
-                style={styles.uploadButton} 
-                onPress={onSelectVideo}
-            >
-                <Ionicons name="add" size={28} color="white" />
-            </TouchableOpacity>
+            {!hideUploadButton && (
+                <TouchableOpacity 
+                    style={styles.uploadButton} 
+                    onPress={onSelectVideo}
+                >
+                    <Ionicons name="add" size={28} color="white" />
+                </TouchableOpacity>
+            )}
         </View>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
+        width: '100%',
+        aspectRatio: 16 / 9,
+        backgroundColor: '#000',
+    },
+    webAspectRatioBox: {
+        position: 'relative',
+        width: '100%',
+        paddingTop: '56.25%', // 16:9 aspect ratio
+        backgroundColor: '#000',
+        overflow: 'hidden',
+    },
+    webVideo: {
         position: 'absolute',
         top: 0,
         left: 0,
-        right: 0,
-        bottom: TAB_BAR_HEIGHT,
-        backgroundColor: '#000',
+        width: '100%',
+        height: '100%',
     },
     videoContainer: {
         flex: 1,
         backgroundColor: '#000',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     video: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        bottom: 0,
-        right: 0,
+        flex: 1,
+        width: '100%',
+        height: '100%',
     },
     uploadPrompt: {
         flex: 1,
