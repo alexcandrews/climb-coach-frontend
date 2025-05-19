@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, Alert, Dimensions, SafeAreaView, Platform } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Alert, Dimensions, SafeAreaView, Platform, TouchableOpacity } from 'react-native';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { Video, ResizeMode } from 'expo-av';
 import { uploadVideoDirectToSupabase /* , updateVideoMetadata */ } from '@/lib/api/videos';
@@ -145,6 +145,10 @@ export default function VideoUploadDetailsScreen() {
         }
     };
 
+    const handleClose = () => {
+        router.replace('/(tabs)/upload');
+    };
+
     return (
         <View style={styles.container}>
             <Stack.Screen 
@@ -152,7 +156,20 @@ export default function VideoUploadDetailsScreen() {
                     headerShown: false,
                 }} 
             />
-            
+            {/* Floating close button */}
+            <View style={styles.floatingCloseButtonContainer} pointerEvents="box-none">
+                <SafeAreaView style={styles.floatingCloseButtonSafeArea} pointerEvents="box-none">
+                    <View style={styles.floatingCloseButtonWrapper} pointerEvents="box-none">
+                        <TouchableOpacity
+                            style={styles.floatingCloseButton}
+                            onPress={handleClose}
+                            activeOpacity={0.7}
+                        >
+                            <Ionicons name="close" size={28} color="#fff" />
+                        </TouchableOpacity>
+                    </View>
+                </SafeAreaView>
+            </View>
             {/* Video player at the top */}
             <View style={styles.videoContainer}>
                 {Platform.OS === 'web' ? (
@@ -303,5 +320,35 @@ const styles = StyleSheet.create({
     },
     uploadButton: {
         marginTop: Spacing.sm,
-    }
+    },
+    floatingCloseButtonContainer: {
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        zIndex: 100,
+        width: '100%',
+        pointerEvents: 'box-none',
+    },
+    floatingCloseButtonSafeArea: {
+        alignItems: 'flex-end',
+        pointerEvents: 'box-none',
+    },
+    floatingCloseButtonWrapper: {
+        paddingTop: Platform.OS === 'ios' ? 10 : 20,
+        paddingRight: 16,
+        pointerEvents: 'box-none',
+    },
+    floatingCloseButton: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 5,
+    },
 });
