@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { View, TextInput, Text, Alert, ActivityIndicator, StyleSheet, TouchableOpacity, StatusBar } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import supabase, { saveSession } from "../../lib/supabase";
 import Colors from "../../constants/Colors";
 import LogoHeader from "@/components/LogoHeader";
@@ -10,7 +10,15 @@ export default function LoginScreen() {
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
+    const [showVerifyMsg, setShowVerifyMsg] = useState(false);
     const router = useRouter();
+    const params = useLocalSearchParams();
+
+    useEffect(() => {
+        if (params.verify === "1") {
+            setShowVerifyMsg(true);
+        }
+    }, [params.verify]);
 
     const validateEmail = (email: string) => {
         // Simple email validation
@@ -112,12 +120,18 @@ export default function LoginScreen() {
             <View style={styles.content}>
                 <LogoHeader />
                 <Text style={styles.title}>Login</Text>
-                
+
+                {showVerifyMsg && (
+                    <View style={styles.infoContainer}>
+                        <Text style={styles.infoText}>Check your email to verify your account before logging in.</Text>
+                    </View>
+                )}
                 <TextInput 
                     value={email} 
                     onChangeText={(text) => {
                         setEmail(text);
                         setErrorMessage("");
+                        setShowVerifyMsg(false);
                     }}
                     autoCapitalize="none"
                     keyboardType="email-address"
@@ -131,6 +145,7 @@ export default function LoginScreen() {
                     onChangeText={(text) => {
                         setPassword(text);
                         setErrorMessage("");
+                        setShowVerifyMsg(false);
                     }}
                     secureTextEntry 
                     style={styles.input}
@@ -172,7 +187,7 @@ export default function LoginScreen() {
 
                 <View style={styles.bottomContainer}>
                     <Text style={styles.signupText}>Don't have an account?</Text>
-                    <TouchableOpacity onPress={() => router.push("/signup")}>
+                    <TouchableOpacity onPress={() => router.push("/signup")}> 
                         <Text style={styles.signupLink}>Sign up</Text>
                     </TouchableOpacity>
                 </View>
@@ -215,6 +230,19 @@ const styles = StyleSheet.create({
         borderRadius: 4,
         marginBottom: 16,
         fontSize: 16,
+        fontFamily: 'PlusJakartaSans_400Regular',
+    },
+    infoContainer: {
+        backgroundColor: '#e6f7ff',
+        borderRadius: 4,
+        padding: 12,
+        marginBottom: 16,
+        alignItems: 'center',
+    },
+    infoText: {
+        color: '#0077b6',
+        fontSize: 15,
+        textAlign: 'center',
         fontFamily: 'PlusJakartaSans_400Regular',
     },
     errorContainer: {

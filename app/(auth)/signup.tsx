@@ -54,7 +54,7 @@ export default function SignUpScreen() {
                 [{ text: "OK" }]
             );
             
-            router.push("/login");
+            router.push({ pathname: "/login", params: { verify: "1" } });
         } catch (err) {
             console.error("Signup error:", err);
             setErrorMessage("An unexpected error occurred. Please try again.");
