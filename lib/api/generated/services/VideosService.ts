@@ -8,77 +8,6 @@ import type { BaseHttpRequest } from '../core/BaseHttpRequest';
 export class VideosService {
     constructor(public readonly httpRequest: BaseHttpRequest) {}
     /**
-     * Get all videos for the authenticated user
-     * @returns Video List of videos
-     * @throws ApiError
-     */
-    public getApiVideos(): CancelablePromise<Array<Video>> {
-        return this.httpRequest.request({
-            method: 'GET',
-            url: '/api/videos',
-            errors: {
-                401: `Unauthorized`,
-                500: `Server error`,
-            },
-        });
-    }
-    /**
-     * Get a specific video by ID
-     * @param videoId The video ID
-     * @returns Video Video details
-     * @throws ApiError
-     */
-    public getApiVideos1(
-        videoId: string,
-    ): CancelablePromise<Video> {
-        return this.httpRequest.request({
-            method: 'GET',
-            url: '/api/videos/{videoId}',
-            path: {
-                'videoId': videoId,
-            },
-            errors: {
-                401: `Unauthorized`,
-                404: `Video not found`,
-                500: `Server error`,
-            },
-        });
-    }
-    /**
-     * Upload a new video
-     * @param formData
-     * @returns any Video uploaded successfully
-     * @throws ApiError
-     */
-    public postApiVideosUpload(
-        formData: {
-            /**
-             * The video file (MP4, MOV, or AVI)
-             */
-            video: Blob;
-            /**
-             * Title of the video
-             */
-            title: string;
-            /**
-             * Description of the video
-             */
-            description?: string;
-        },
-    ): CancelablePromise<any> {
-        return this.httpRequest.request({
-            method: 'POST',
-            url: '/api/videos/upload',
-            formData: formData,
-            mediaType: 'multipart/form-data',
-            errors: {
-                400: `Invalid request`,
-                401: `Unauthorized`,
-                500: `Server error`,
-            },
-        });
-    }
-    /**
      * Start a chunked video upload session
      * @param requestBody
      * @returns any Upload session started
@@ -181,103 +110,6 @@ export class VideosService {
         });
     }
     /**
-     * Analyze a specific video and get coaching insights
-     * @param videoId The video ID to analyze
-     * @returns any Analysis started
-     * @throws ApiError
-     */
-    public postApiVideosAnalyze(
-        videoId: string,
-    ): CancelablePromise<any> {
-        return this.httpRequest.request({
-            method: 'POST',
-            url: '/api/videos/{videoId}/analyze',
-            path: {
-                'videoId': videoId,
-            },
-            errors: {
-                401: `Unauthorized`,
-                404: `Video not found`,
-                500: `Server error`,
-            },
-        });
-    }
-    /**
-     * Get coaching insights for a specific video
-     * @param videoId The video ID
-     * @returns any Video coaching insights
-     * @throws ApiError
-     */
-    public getApiVideosInsights(
-        videoId: string,
-    ): CancelablePromise<any> {
-        return this.httpRequest.request({
-            method: 'GET',
-            url: '/api/videos/{videoId}/insights',
-            path: {
-                'videoId': videoId,
-            },
-            errors: {
-                401: `Unauthorized`,
-                404: `Video not found or insights not available`,
-                500: `Server error`,
-            },
-        });
-    }
-    /**
-     * Process a video uploaded directly to Supabase storage
-     * @param requestBody
-     * @returns any Video processed successfully and analysis started
-     * @throws ApiError
-     */
-    public postApiVideosProcessExternalUpload(
-        requestBody: {
-            /**
-             * Unique ID for the video from initialization
-             */
-            uploadId: string;
-            /**
-             * Updated status for the video
-             */
-            status?: string;
-            /**
-             * Number of chunks uploaded (should be 1 for small files)
-             */
-            uploadedChunks?: number;
-            /**
-             * Total number of chunks (should be 1 for small files)
-             */
-            totalChunks?: number;
-        },
-    ): CancelablePromise<{
-        /**
-         * ID of the video
-         */
-        id?: string;
-        /**
-         * Success message
-         */
-        message?: string;
-        /**
-         * Timestamp of processing
-         */
-        timestamp?: string;
-    }> {
-        return this.httpRequest.request({
-            method: 'POST',
-            url: '/api/videos/process-external-upload',
-            body: requestBody,
-            mediaType: 'application/json',
-            errors: {
-                400: `Invalid request`,
-                401: `Not authenticated`,
-                403: `Not authorized`,
-                404: `Video not found`,
-                500: `Server error`,
-            },
-        });
-    }
-    /**
      * Initialize a video upload by creating a database record
      * @param requestBody
      * @returns any Upload initialized successfully
@@ -286,58 +118,41 @@ export class VideosService {
     public postApiVideosUploadInitialize(
         requestBody: {
             /**
-             * Title of the video provided by the user
+             * Title for the video
              */
             title: string;
             /**
-             * Location where the video was recorded (optional)
+             * Location where the video was taken (optional)
              */
             location?: string;
             /**
-             * Total number of chunks to be uploaded
+             * Total number of chunks that will be uploaded
              */
             totalChunks: number;
             /**
-             * Total size of the file in bytes
+             * Total file size in bytes
              */
             fileSize: number;
             /**
-             * MIME type of the video file
+             * MIME type of the video
              */
             mimeType: string;
         },
-    ): CancelablePromise<{
-        /**
-         * Unique ID for the upload
-         */
-        uploadId?: string;
-        /**
-         * File name pattern to use for chunk uploads
-         */
-        fileName?: string;
-        /**
-         * Success message
-         */
-        message?: string;
-        /**
-         * Initialization timestamp
-         */
-        timestamp?: string;
-    }> {
+    ): CancelablePromise<any> {
         return this.httpRequest.request({
             method: 'POST',
             url: '/api/videos/upload/initialize',
             body: requestBody,
             mediaType: 'application/json',
             errors: {
-                400: `Missing required fields`,
-                401: `User not authenticated`,
+                400: `Invalid request`,
+                401: `Unauthorized`,
                 500: `Server error`,
             },
         });
     }
     /**
-     * Update the chunk progress for an ongoing upload
+     * Update the progress of a chunked upload
      * @param requestBody
      * @returns any Chunk progress updated successfully
      * @throws ApiError
@@ -353,20 +168,7 @@ export class VideosService {
              */
             uploadedChunks: number;
         },
-    ): CancelablePromise<{
-        /**
-         * The upload ID
-         */
-        uploadId?: string;
-        /**
-         * Number of chunks uploaded
-         */
-        uploadedChunks?: number;
-        /**
-         * Success message
-         */
-        message?: string;
-    }> {
+    ): CancelablePromise<any> {
         return this.httpRequest.request({
             method: 'POST',
             url: '/api/videos/update-chunk-progress',
@@ -377,6 +179,65 @@ export class VideosService {
                 401: `User not authenticated`,
                 403: `User doesn't own this upload`,
                 404: `Upload not found`,
+                500: `Server error`,
+            },
+        });
+    }
+    /**
+     * Get a list of all videos for the authenticated user
+     * @returns Video A list of videos
+     * @throws ApiError
+     */
+    public getApiVideos(): CancelablePromise<Array<Video>> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/api/videos',
+            errors: {
+                401: `Unauthorized`,
+                500: `Server error`,
+            },
+        });
+    }
+    /**
+     * Get a video by ID
+     * @param id UUID of the video
+     * @returns Video The video object
+     * @throws ApiError
+     */
+    public getApiVideos1(
+        id: string,
+    ): CancelablePromise<Video> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/api/videos/{id}',
+            path: {
+                'id': id,
+            },
+            errors: {
+                401: `Unauthorized`,
+                404: `Video not found`,
+                500: `Server error`,
+            },
+        });
+    }
+    /**
+     * Analyze a video and generate coaching insights
+     * @param id UUID of the video to analyze
+     * @returns any Coaching insights for the video
+     * @throws ApiError
+     */
+    public postApiVideosAnalyze(
+        id: string,
+    ): CancelablePromise<any> {
+        return this.httpRequest.request({
+            method: 'POST',
+            url: '/api/videos/{id}/analyze',
+            path: {
+                'id': id,
+            },
+            errors: {
+                401: `Unauthorized`,
+                404: `Video not found`,
                 500: `Server error`,
             },
         });
