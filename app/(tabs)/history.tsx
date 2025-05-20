@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, RefreshControl, Modal, ScrollView, Image, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import Colors from '../../constants/Colors';
 import Spacing from '../../constants/Spacing';
 import { API_CONFIG } from '../config';
@@ -169,6 +169,15 @@ export default function HistoryScreen() {
         const secs = Math.floor(seconds % 60);
         return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
+
+    // Refetch videos every time the page is focused
+    useFocusEffect(
+        React.useCallback(() => {
+            if (session) {
+                fetchVideos();
+            }
+        }, [session])
+    );
 
     if (loading && !refreshing) {
         return (
