@@ -106,6 +106,32 @@ export default function VideoScreen() {
   }, [video, videoContainerRef.current]);
 
   useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    let isMounted = true;
+    if (video && (video.analysis_status === 'not started' || video.analysis_status === 'in progress')) {
+      interval = setInterval(async () => {
+        if (!id || typeof id !== 'string') return;
+        try {
+          const updatedVideo = await getVideo(id);
+          if (updatedVideo && isMounted) {
+            setVideo(updatedVideo);
+            // Stop polling if status is now complete or error
+            if (updatedVideo.analysis_status === 'complete' || updatedVideo.analysis_status === 'error') {
+              if (interval) clearInterval(interval);
+            }
+          }
+        } catch (err) {
+          // Optionally handle error
+        }
+      }, 5000);
+    }
+    return () => {
+      isMounted = false;
+      if (interval) clearInterval(interval);
+    };
+  }, [video, id]);
+
+  useEffect(() => {
     const loadVideo = async () => {
       if (!id || typeof id !== 'string') {
         setError('Invalid video ID');

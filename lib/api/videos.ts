@@ -25,6 +25,7 @@ export interface VideoDetails {
     location: string;
     createdAt: string;
     insights: CoachingInsight[];
+    analysis_status: 'not started' | 'in progress' | 'complete' | 'error';
 }
 
 export interface CoachingInsight {
@@ -81,6 +82,10 @@ export const getVideo = async (videoId: string): Promise<VideoDetails | null> =>
     try {
         const response = await api.get(`/api/videos/${videoId}`);
         if (response.status === 200 && response.data) {
+            // Ensure analysis_status is present
+            if (!('analysis_status' in response.data)) {
+                response.data.analysis_status = 'not started';
+            }
             return response.data;
         }
         return null;
