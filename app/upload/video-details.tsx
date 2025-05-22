@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, Alert, Dimensions, SafeAreaView, Platform, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Alert, Dimensions, SafeAreaView, Platform, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { Video, ResizeMode } from 'expo-av';
 import { uploadVideoDirectToSupabase /* , updateVideoMetadata */ } from '@/lib/api/videos';
@@ -12,6 +12,7 @@ import BorderRadius from '@/constants/BorderRadius';
 import Shadows from '@/constants/Shadows';
 import * as Progress from 'react-native-progress';
 import VideoPlayer from '../components/VideoPlayer';
+import * as VideoThumbnails from 'expo-video-thumbnails';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -46,6 +47,10 @@ export default function VideoUploadDetailsScreen() {
     const [uploading, setUploading] = useState(false);
     const [status, setStatus] = useState('');
     const [uploadProgress, setUploadProgress] = useState(0);
+    const [thumbnail, setThumbnail] = useState<string | null>(null);
+    const [showVideo, setShowVideo] = useState(false);
+    const [generatingThumbnail, setGeneratingThumbnail] = useState(false);
+    const objectUrlRef = useRef<string | null>(null);
     
     const videoRef = useRef<Video>(null);
     const videoContainerRef = useRef(null);
@@ -79,6 +84,85 @@ export default function VideoUploadDetailsScreen() {
         container.appendChild(videoElement);
       }
     }, [videoUri, videoContainerRef.current]);
+
+    // Improved thumbnail generation effect
+    useEffect(() => {
+      if (!videoUri) return;
+      let uri: string = Array.isArray(videoUri) ? videoUri[0] : videoUri;
+      setGeneratingThumbnail(true);
+      setThumbnail(null);
+      // Clean up previous object URL
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current);
+        objectUrlRef.current = null;
+      }
+      if (Platform.OS === 'web') {
+        // If uri is a data URL, convert to blob and then to object URL
+        if (uri.startsWith('data:')) {
+          fetch(uri)
+            .then(res => res.blob())
+            .then(blob => {
+              const objectUrl = URL.createObjectURL(blob);
+              objectUrlRef.current = objectUrl;
+              generateWebThumbnail(objectUrl);
+            });
+        } else {
+          objectUrlRef.current = uri;
+          generateWebThumbnail(uri);
+        }
+        function generateWebThumbnail(url: string) {
+          const video = document.createElement('video');
+          video.src = url;
+          video.crossOrigin = 'anonymous';
+          video.muted = true;
+          video.playsInline = true;
+          video.currentTime = 0.1; // Seek to 0.1s to avoid black frame
+          let seeked = false;
+          video.addEventListener('loadeddata', () => {
+            // Wait for enough data to be loaded
+            video.currentTime = 0.1;
+          });
+          video.addEventListener('seeked', () => {
+            if (seeked) return; // Prevent double-calling
+            seeked = true;
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+              setThumbnail(canvas.toDataURL('image/png'));
+            }
+            setGeneratingThumbnail(false);
+            // Clean up object URL
+            if (objectUrlRef.current) {
+              URL.revokeObjectURL(objectUrlRef.current);
+              objectUrlRef.current = null;
+            }
+          });
+          video.addEventListener('error', () => {
+            setGeneratingThumbnail(false);
+            if (objectUrlRef.current) {
+              URL.revokeObjectURL(objectUrlRef.current);
+              objectUrlRef.current = null;
+            }
+          });
+        }
+      } else {
+        // Native: use Expo VideoThumbnails at 0.1s
+        VideoThumbnails.getThumbnailAsync(uri, { time: 0.1 })
+          .then(({ uri }) => setThumbnail(uri))
+          .catch(() => setThumbnail(null))
+          .finally(() => setGeneratingThumbnail(false));
+      }
+      // Clean up on unmount
+      return () => {
+        if (objectUrlRef.current) {
+          URL.revokeObjectURL(objectUrlRef.current);
+          objectUrlRef.current = null;
+        }
+      };
+    }, [videoUri]);
 
     const handleSelectVideo = () => {};
 
@@ -170,16 +254,25 @@ export default function VideoUploadDetailsScreen() {
                     </View>
                 </SafeAreaView>
             </View>
-            {/* Video player at the top */}
+            {/* Video or thumbnail preview at the top */}
             <View style={styles.videoContainer}>
-                {Platform.OS === 'web' ? (
-                  <div
-                    id="climb-coach-upload-video-container"
-                    ref={videoContainerRef}
-                    style={{ width: '100%', height: '100%', backgroundColor: '#000' }}
-                  />
-                ) : (
-                  videoUri && (
+                {showVideo ? (
+                  Platform.OS === 'web' ? (
+                    <div
+                      id="climb-coach-upload-video-container"
+                      ref={videoContainerRef}
+                      style={{ width: '100%', height: '100%', backgroundColor: '#000' }}
+                    >
+                      <video
+                        id="climb-coach-upload-video-player"
+                        src={videoUri as string}
+                        controls
+                        autoPlay
+                        playsInline
+                        style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#000' }}
+                      />
+                    </div>
+                  ) : (
                     <Video
                       ref={videoRef}
                       style={styles.nativeVideo}
@@ -187,9 +280,39 @@ export default function VideoUploadDetailsScreen() {
                       resizeMode={ResizeMode.CONTAIN}
                       useNativeControls
                       isLooping={false}
-                      shouldPlay={false}
+                      shouldPlay={true}
                     />
                   )
+                ) : (
+                  <TouchableOpacity
+                    style={{ flex: 1, width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' }}
+                    activeOpacity={0.8}
+                    onPress={() => setShowVideo(true)}
+                    disabled={generatingThumbnail}
+                  >
+                    {generatingThumbnail ? (
+                      <View style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }}>
+                        <ActivityIndicator size="large" color="#fff" />
+                        <View style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' }}>
+                          <Ionicons name="play-circle" size={64} color="rgba(255,255,255,0.85)" />
+                        </View>
+                      </View>
+                    ) : (
+                      <>
+                        {thumbnail ? (
+                          <Image
+                            source={{ uri: thumbnail }}
+                            style={{ width: '100%', height: '100%', resizeMode: 'cover', borderRadius: 0, backgroundColor: '#000' }}
+                          />
+                        ) : (
+                          <View style={{ width: '100%', height: '100%', backgroundColor: '#000' }} />
+                        )}
+                        <View style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' }}>
+                          <Ionicons name="play-circle" size={64} color="rgba(255,255,255,0.85)" />
+                        </View>
+                      </>
+                    )}
+                  </TouchableOpacity>
                 )}
             </View>
 
