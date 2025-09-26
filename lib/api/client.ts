@@ -11,7 +11,7 @@ export const getApiClient = async (): Promise<ClimbCoachApi> => {
     const token = session?.access_token;
     
     apiClient = new ClimbCoachApi({
-      BASE: process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000',
+      BASE: process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080',
       HEADERS: token 
         ? {
             Authorization: `Bearer ${token}`,

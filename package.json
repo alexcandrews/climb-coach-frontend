@@ -10,7 +10,7 @@
     "web": "expo start --web",
     "test": "jest --watchAll",
     "generate:api": "node scripts/generate-api.js",
-    "generate:api:locally": "EXPO_PUBLIC_API_URL=http://localhost:8000 node scripts/generate-api.js",
+    "generate:api:locally": "EXPO_PUBLIC_API_URL=http://localhost:8080 node scripts/generate-api.js",
     "prebuild": "npm run generate:api",
     "prestart": "npm run generate:api"
   },

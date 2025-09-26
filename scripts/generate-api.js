@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Configuration
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080';
 const OUTPUT_PATH = path.resolve(__dirname, '../lib/api/generated');
 const MODELS_PATH = path.resolve(OUTPUT_PATH, 'models');
 const SERVICES_PATH = path.resolve(OUTPUT_PATH, 'services');
