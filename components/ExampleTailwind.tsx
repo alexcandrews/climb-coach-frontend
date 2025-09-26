@@ -76,7 +76,11 @@ export function ExampleTailwind() {
         {/* Button with Space Grotesk for emphasis */}
         <StyledButton 
           className="bg-accent py-3 px-6 rounded-lg items-center"
-          onPress={() => console.log('Button pressed')}
+        onPress={() => {
+          if (__DEV__) {
+            console.log('Button pressed');
+          }
+        }}
         >
           <StyledText className="text-text font-grotesk-medium text-lg">
             Get Started

@@ -3,6 +3,12 @@ import { View, ActivityIndicator } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
 import supabase from '../../lib/supabase';
 
+const debugLog = (...args: unknown[]) => {
+    if (__DEV__) {
+        console.log(...args);
+    }
+};
+
 // List of paths that don't require authentication
 const PUBLIC_PATHS = ['/login', '/signup', 'login', 'signup', 'index', '/', '/index', '/(tabs)'];
 
@@ -18,8 +24,8 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     );
 
     // Debug logging
-    console.log('Current pathname:', pathname);
-    console.log('Is public path?', isPublicPath);
+    debugLog('Current pathname:', pathname);
+    debugLog('Is public path?', isPublicPath);
 
     useEffect(() => {
         if (isPublicPath) {
@@ -30,7 +36,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
         checkAuth();
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-            console.log('Auth state changed:', event, !!session);
+            debugLog('Auth state changed:', event, !!session);
             setIsAuthenticated(!!session);
             if (!session && !isLoading && !isPublicPath) {
                 router.replace('/login');
@@ -45,7 +51,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     const checkAuth = async () => {
         try {
             const { data: { session } } = await supabase.auth.getSession();
-            console.log('Session check:', !!session);
+            debugLog('Session check:', !!session);
             setIsAuthenticated(!!session);
             if (!session && !isPublicPath) {
                 router.replace('/login');
@@ -61,7 +67,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     };
 
     // Debug logging for render conditions
-    console.log('Render conditions:', {
+    debugLog('Render conditions:', {
         isLoading,
         isPublicPath,
         isAuthenticated,

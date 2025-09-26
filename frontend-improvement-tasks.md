@@ -8,9 +8,8 @@
   ## 2. Auth & Navigation UX — ✅ Completed
   - `app/(auth)/login.tsx` now uses `Linking.createURL('/reset-password')` so the Supabase reset flow works on native and web.
 
-  ## 3. Logging Hygiene
-  - Wrap verbose `console.log` statements (e.g., Supabase creds in `lib/supabase.tsx`, upload logs in `lib/api/videos.ts`, history fetch logs
-  in `app/(tabs)/history.tsx`) with `if (__DEV__)` or remove them for production safety.
+  ## 3. Logging Hygiene — ✅ Completed
+  - Added local `debugLog` helpers so info-level logs in `lib/supabase.tsx`, `lib/api/videos.ts`, and `app/(tabs)/history.tsx` only emit during development.
 
   ## 4. Tooling & Quality Gates
   - Add ESLint and Prettier configs with matching npm scripts, integrate into CI/pre-commit.

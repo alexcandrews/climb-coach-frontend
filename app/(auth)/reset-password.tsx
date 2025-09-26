@@ -5,6 +5,12 @@ import supabase from '../../lib/supabase';
 import Colors from '../../constants/Colors';
 import LogoHeader from '@/components/LogoHeader';
 
+const debugLog = (...args: unknown[]) => {
+  if (__DEV__) {
+    console.log(...args);
+  }
+};
+
 function getTokensFromHash() {
   if (typeof window === 'undefined') return { access_token: '', refresh_token: '' };
   const hash = window.location.hash;
@@ -30,12 +36,12 @@ export default function ResetPasswordScreen() {
       setErrorMessage('');
       let session = null;
       const { access_token, refresh_token } = getTokensFromHash();
-      console.log('[ResetPassword] Extracted access_token:', access_token);
-      console.log('[ResetPassword] Extracted refresh_token:', refresh_token);
+      debugLog('[ResetPassword] Extracted access_token:', access_token);
+      debugLog('[ResetPassword] Extracted refresh_token:', refresh_token);
       if (access_token && refresh_token) {
-        console.log('[ResetPassword] Calling supabase.auth.setSession...');
+        debugLog('[ResetPassword] Calling supabase.auth.setSession...');
         const { data, error } = await supabase.auth.setSession({ access_token, refresh_token });
-        console.log('[ResetPassword] setSession result:', { data, error });
+        debugLog('[ResetPassword] setSession result:', { data, error });
         if (error) {
           console.error('[ResetPassword] setSession error:', error);
           setErrorMessage('Invalid or expired reset link. Please request a new one.');
@@ -53,7 +59,7 @@ export default function ResetPasswordScreen() {
       // Double check session
       if (!session) {
         const { data: { session: currentSession } } = await supabase.auth.getSession();
-        console.log('[ResetPassword] getSession result:', currentSession);
+        debugLog('[ResetPassword] getSession result:', currentSession);
         if (!currentSession) {
           console.error('[ResetPassword] No session after setSession');
           setErrorMessage('Invalid or expired reset link. Please request a new one.');
@@ -63,7 +69,7 @@ export default function ResetPasswordScreen() {
       }
       setSessionReady(true);
       setLoading(false);
-      console.log('[ResetPassword] Session is ready, showing form.');
+      debugLog('[ResetPassword] Session is ready, showing form.');
     }
     handleSession();
   }, []);

@@ -4,8 +4,14 @@ import supabase from '../supabase';
 import { v4 as uuidv4 } from 'uuid';
 import { UPLOAD_CONFIG } from '../config/upload';
 
-console.log('🔧 API Base URL:', api.defaults.baseURL || 'Not set');
-console.log('🔧 API Timeout:', api.defaults.timeout || 'Default');
+const debugLog = (...args: unknown[]) => {
+    if (__DEV__) {
+        console.log(...args);
+    }
+};
+
+debugLog('🔧 API Base URL:', api.defaults.baseURL || 'Not set');
+debugLog('🔧 API Timeout:', api.defaults.timeout || 'Default');
 
 export interface UserVideo {
     id: string;
@@ -50,7 +56,7 @@ export interface UploadResult {
  * @returns Promise with array of user videos
  */
 export const getUserVideos = async (): Promise<UserVideo[]> => {
-    console.log('🔧 API Call Info:', {
+    debugLog('🔧 API Call Info:', {
         baseURL: api.defaults.baseURL,
         method: 'GET',
         endpoint: '/api/videos'
@@ -58,7 +64,7 @@ export const getUserVideos = async (): Promise<UserVideo[]> => {
     try {
         const response = await api.get('/api/videos');
         if (response.status === 200 && response.data.videos) {
-            console.log(`Loaded ${response.data.videos.length} videos`);
+            debugLog(`Loaded ${response.data.videos.length} videos`);
             return response.data.videos;
         }
         return [];
@@ -74,7 +80,7 @@ export const getUserVideos = async (): Promise<UserVideo[]> => {
  * @returns Promise with video details
  */
 export const getVideo = async (videoId: string): Promise<VideoDetails | null> => {
-    console.log('🔧 API Call Info:', {
+    debugLog('🔧 API Call Info:', {
         baseURL: api.defaults.baseURL,
         method: 'GET',
         endpoint: `/api/videos/${videoId}`
@@ -157,7 +163,7 @@ const uploadChunkWithRetry = async (
             
             // Exponential backoff
             const delay = Math.pow(2, attempts) * 1000;
-            console.log(`⏱️ Retrying chunk ${filePath} after ${delay}ms delay...`);
+            debugLog(`⏱️ Retrying chunk ${filePath} after ${delay}ms delay...`);
             await new Promise(resolve => setTimeout(resolve, delay));
         }
     }
@@ -175,7 +181,7 @@ export const uploadVideo = async (
     videoUri: string,
     onProgress?: (progress: number) => void
 ): Promise<UploadResult> => {
-    console.log('🧩 Using standard chunked upload approach');
+    debugLog('🧩 Using standard chunked upload approach');
     try {
         // All videos now use the chunked upload approach
         return uploadVideoDirectToSupabase({ videoUri, onProgress });
@@ -216,7 +222,7 @@ export const uploadVideoDirectToSupabase = async (
 ): Promise<UploadResult> => {
     const { videoUri, title = 'Untitled Video', location, onProgress } = params;
     
-    console.log('📣 uploadVideoDirectToSupabase called with params:', { 
+    debugLog('📣 uploadVideoDirectToSupabase called with params:', { 
         videoUri: videoUri ? `${videoUri.substring(0, 30)}...` : null, 
         title, 
         location 
@@ -224,25 +230,25 @@ export const uploadVideoDirectToSupabase = async (
     
     try {
         // Check authentication status
-        console.log('📣 Checking authentication status...');
+        debugLog('📣 Checking authentication status...');
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.access_token) {
             console.error('❌ Authentication failed: No session token');
             throw new Error('Not authenticated');
         }
-        console.log('✅ User authenticated');
+        debugLog('✅ User authenticated');
 
         // Get the user ID
-        console.log('📣 Getting user ID...');
+        debugLog('📣 Getting user ID...');
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
             console.error('❌ Authentication failed: No user found');
             throw new Error('User not found');
         }
-        console.log(`✅ User ID obtained: ${user.id.substring(0, 8)}...`);
+        debugLog(`✅ User ID obtained: ${user.id.substring(0, 8)}...`);
 
         // Get the video blob
-        console.log('📣 Getting video blob...');
+        debugLog('📣 Getting video blob...');
         let blob: Blob;
         try {
             if (Platform.OS === "web") {
@@ -253,7 +259,7 @@ export const uploadVideoDirectToSupabase = async (
                 const response = await fetch(videoUri);
                 blob = await response.blob();
             }
-            console.log(`✅ Video blob obtained, size: ${(blob.size / (1024 * 1024)).toFixed(2)}MB, type: ${blob.type}`);
+            debugLog(`✅ Video blob obtained, size: ${(blob.size / (1024 * 1024)).toFixed(2)}MB, type: ${blob.type}`);
         } catch (blobError: any) {
             console.error('❌ Failed to get blob from videoUri:', blobError);
             throw new Error(`Failed to get video data: ${blobError.message}`);
@@ -261,20 +267,20 @@ export const uploadVideoDirectToSupabase = async (
 
         // Calculate total size
         const totalSize = blob.size;
-        console.log(`📊 Video size: ${(totalSize / (1024 * 1024)).toFixed(2)}MB`);
+        debugLog(`📊 Video size: ${(totalSize / (1024 * 1024)).toFixed(2)}MB`);
         
         // Start progress
         onProgress?.(5);
         
         // Use chunked upload for all files regardless of size
-        console.log('🧩 Using chunked upload approach for all files');
+        debugLog('🧩 Using chunked upload approach for all files');
         
         // Set up chunk parameters - for small files this might just be 1 chunk
         const totalChunks = Math.max(1, Math.ceil(totalSize / UPLOAD_CONFIG.CHUNK_SIZE));
         
         // Initialize the upload with backend
-        console.log('🚀 Initializing upload with backend...');
-        console.log('🔧 API Call Info for initialization:', {
+        debugLog('🚀 Initializing upload with backend...');
+        debugLog('🔧 API Call Info for initialization:', {
             baseURL: api.defaults.baseURL,
             method: 'POST',
             endpoint: '/api/videos/upload/initialize',
@@ -295,7 +301,7 @@ export const uploadVideoDirectToSupabase = async (
                 fileSize: totalSize,
                 mimeType: blob.type || 'video/mp4'
             });
-            console.log('✅ Upload initialization successful, response:', initResponse.data);
+            debugLog('✅ Upload initialization successful, response:', initResponse.data);
             
             if (!initResponse.data.uploadId) {
                 console.error('❌ Upload initialization failed: No upload ID in response');
@@ -303,11 +309,11 @@ export const uploadVideoDirectToSupabase = async (
             }
             
             const uploadId = initResponse.data.uploadId;
-            console.log(`✅ Upload initialized with ID: ${uploadId}`);
+            debugLog(`✅ Upload initialized with ID: ${uploadId}`);
             
             let uploadedChunks = 0;
             
-            console.log(`📊 Splitting file into ${totalChunks} chunks of ${UPLOAD_CONFIG.CHUNK_SIZE / 1024} KB each with ${UPLOAD_CONFIG.MAX_CONCURRENT_UPLOADS} parallel uploads`);
+            debugLog(`📊 Splitting file into ${totalChunks} chunks of ${UPLOAD_CONFIG.CHUNK_SIZE / 1024} KB each with ${UPLOAD_CONFIG.MAX_CONCURRENT_UPLOADS} parallel uploads`);
             
             // Process chunks in batches for controlled parallelism
             for (let i = 0; i < totalChunks; i += UPLOAD_CONFIG.MAX_CONCURRENT_UPLOADS) {
@@ -324,7 +330,7 @@ export const uploadVideoDirectToSupabase = async (
                     const chunkPath = `${userId}/${userId}_${uploadId}.part${chunkIndex}`;
                     
                     // Add more detailed logging about the chunk
-                    console.log(`📦 Preparing chunk ${chunkIndex+1}/${totalChunks}:`, {
+                    debugLog(`📦 Preparing chunk ${chunkIndex+1}/${totalChunks}:`, {
                         path: chunkPath,
                         size: chunkBlob.size,
                         start,
@@ -339,7 +345,7 @@ export const uploadVideoDirectToSupabase = async (
                                 uploadedChunks++;
                                 const progress = Math.min(Math.round((uploadedChunks / totalChunks) * 90) + 5, 95);
                                 onProgress?.(progress);
-                                console.log(`✅ Chunk ${chunkIndex+1}/${totalChunks} uploaded successfully (${((uploadedChunks/totalChunks)*100).toFixed(0)}%) to ${chunkPath}`);
+                                debugLog(`✅ Chunk ${chunkIndex+1}/${totalChunks} uploaded successfully (${((uploadedChunks/totalChunks)*100).toFixed(0)}%) to ${chunkPath}`);
                                 
                                 // Update the backend about chunk progress
                                 // This is a fire-and-forget call - we don't wait for response
@@ -360,14 +366,14 @@ export const uploadVideoDirectToSupabase = async (
                 // Wait for current batch to complete before moving to next batch
                 try {
                     await Promise.all(uploadPromises);
-                    console.log(`✅ Batch ${i/UPLOAD_CONFIG.MAX_CONCURRENT_UPLOADS + 1} completed successfully`);
+                    debugLog(`✅ Batch ${i/UPLOAD_CONFIG.MAX_CONCURRENT_UPLOADS + 1} completed successfully`);
                 } catch (batchError: any) {
                     console.error(`❌ Error in upload batch:`, batchError);
                     throw new Error(`Failed to upload batch: ${batchError.message}`);
                 }
             }
             
-            console.log(`✅ Successfully uploaded all ${totalChunks} chunks in parallel`);
+            debugLog(`✅ Successfully uploaded all ${totalChunks} chunks in parallel`);
             
             // Update progress to indicate completion of upload
             onProgress?.(100);
@@ -487,10 +493,10 @@ export const updateVideoMetadata = async (
         
         // Implement retry logic
         try {
-            console.log('🔄 Retrying metadata update...');
+            debugLog('🔄 Retrying metadata update...');
             await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
             await api.patch(`/api/videos/${videoId}`, metadata);
-            console.log('✅ Metadata update retry successful');
+            debugLog('✅ Metadata update retry successful');
             return true;
         } catch (retryError) {
             console.error('❌ Metadata update retry failed:', retryError);

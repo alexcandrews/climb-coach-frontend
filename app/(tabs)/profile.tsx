@@ -11,6 +11,12 @@ import Shadows from '@/constants/Shadows';
 import LogoHeader from '@/components/LogoHeader';
 import { APP_TEXT_STYLES } from '@/constants/Typography';
 
+const debugLog = (...args: unknown[]) => {
+    if (__DEV__) {
+        console.log(...args);
+    }
+};
+
 const SKILL_LEVELS = ['Beginner', 'Intermediate', 'Advanced', 'Expert'];
 const CLIMBING_STYLES = [
     'Indoor Bouldering',
@@ -55,14 +61,14 @@ export default function ProfileScreen() {
                 }
                 
                 if (profile) {
-                    console.log('Loaded profile:', profile);
+                    debugLog('Loaded profile:', profile);
                     setName(profile.name || user?.email?.split('@')[0] || '');
                     setYearsClimbing(profile.years_climbing || 0);
                     setPrimaryGoals(profile.primary_goals || 'Improve technique');
                     setSkillLevel(profile.skill_level || 'Beginner');
                     setClimbingStyles(profile.climbing_styles || ['Indoor Bouldering']);
                 } else {
-                    console.log('No profile found, using defaults');
+                    debugLog('No profile found, using defaults');
                 }
             } catch (error) {
                 console.error('Error loading user data:', error);
@@ -133,7 +139,7 @@ export default function ProfileScreen() {
                     throw new Error(typeof error === 'string' ? error : error.message || 'Unknown error');
                 }
                 
-                console.log('Profile updated successfully:', data);
+                debugLog('Profile updated successfully:', data);
                 // Success message
                 Alert.alert('Success', 'Profile updated successfully');
             } catch (error) {

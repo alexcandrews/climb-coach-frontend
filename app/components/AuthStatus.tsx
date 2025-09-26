@@ -3,6 +3,12 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import supabase, { logoutUser } from '../../lib/supabase';
 
+const debugLog = (...args: unknown[]) => {
+    if (__DEV__) {
+        console.log(...args);
+    }
+};
+
 export default function AuthStatus() {
     const router = useRouter();
     const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -13,7 +19,7 @@ export default function AuthStatus() {
         // Subscribe to auth state changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
             setIsAuthenticated(!!session);
-            console.log('Auth state changed:', event, !!session);
+            debugLog('Auth state changed:', event, !!session);
         });
 
         return () => {

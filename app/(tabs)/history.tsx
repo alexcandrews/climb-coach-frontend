@@ -10,6 +10,12 @@ import { APP_TEXT_STYLES } from '../../constants/Typography';
 import LogoHeader from '../../components/LogoHeader';
 import { Ionicons } from '@expo/vector-icons';
 
+const debugLog = (...args: unknown[]) => {
+    if (__DEV__) {
+        console.log(...args);
+    }
+};
+
 interface VideoItem {
     id: string;
     title: string;
@@ -56,8 +62,8 @@ export default function HistoryScreen() {
                 return;
             }
             
-            console.log('📡 Fetching videos from:', `${API_CONFIG.BASE_URL}/api/videos`);
-            console.log('🔑 Using access token:', session.access_token.substring(0, 10) + '...');
+            debugLog('📡 Fetching videos from:', `${API_CONFIG.BASE_URL}/api/videos`);
+            debugLog('🔑 Using access token:', session.access_token.substring(0, 10) + '...');
             
             const response = await fetch(`${API_CONFIG.BASE_URL}/api/videos`, {
                 method: 'GET',
@@ -75,7 +81,7 @@ export default function HistoryScreen() {
             }
             
             const data = await response.json();
-            console.log('📦 Video data received:', JSON.stringify(data, null, 2));
+            debugLog('📦 Video data received:', JSON.stringify(data, null, 2));
             
             if (!data.videos) {
                 console.warn('⚠️ No videos array in response:', data);
@@ -83,7 +89,7 @@ export default function HistoryScreen() {
             
             // Log each video to check if 'name' field exists
             if (data.videos && data.videos.length > 0) {
-                console.log('📹 First video details:', data.videos[0]);
+                debugLog('📹 First video details:', data.videos[0]);
             }
             
             setVideos(data.videos || []);
@@ -107,7 +113,7 @@ export default function HistoryScreen() {
 
     useEffect(() => {
         if (videos.length > 0) {
-            console.log('First video structure:', videos[0]);
+            debugLog('First video structure:', videos[0]);
         }
     }, [videos]);
 
@@ -135,7 +141,7 @@ export default function HistoryScreen() {
                 return;
             }
             
-            console.log(`📡 Fetching insights for video ${videoId}`);
+            debugLog(`📡 Fetching insights for video ${videoId}`);
             
             const response = await fetch(`${API_CONFIG.BASE_URL}/api/videos/${videoId}/insights`, {
                 method: 'GET',
@@ -151,7 +157,7 @@ export default function HistoryScreen() {
             }
             
             const data = await response.json();
-            console.log('📊 Insights data received:', JSON.stringify(data, null, 2));
+            debugLog('📊 Insights data received:', JSON.stringify(data, null, 2));
             
             setSelectedVideoInsights(data);
             setInsightsModalVisible(true);
