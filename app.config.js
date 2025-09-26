@@ -34,6 +34,7 @@ export default {
     extra: {
       SUPABASE_URL: process.env.EXPO_PUBLIC_SUPABASE_URL?.replace(/['";]+/g, "") || "",
       SUPABASE_ANON_KEY: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY?.replace(/['";]+/g, "") || "",
+      API_URL: process.env.EXPO_PUBLIC_API_URL?.replace(/['";]+/g, "") || "http://localhost:8080",
       eas: {
         projectId: "a729388d-8cef-4799-98cd-32b49fc25651"
       }

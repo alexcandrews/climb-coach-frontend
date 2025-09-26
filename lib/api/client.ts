@@ -1,5 +1,6 @@
 import { ClimbCoachApi } from './generated/ClimbCoachApi';
 import supabase from '../supabase';
+import { API_CONFIG } from '@/app/config';
 
 // Create a singleton instance of the API client
 let apiClient: ClimbCoachApi | null = null;
@@ -11,7 +12,7 @@ export const getApiClient = async (): Promise<ClimbCoachApi> => {
     const token = session?.access_token;
     
     apiClient = new ClimbCoachApi({
-      BASE: process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080',
+      BASE: API_CONFIG.BASE_URL,
       HEADERS: token 
         ? {
             Authorization: `Bearer ${token}`,
