@@ -15,10 +15,9 @@
   - Add ESLint and Prettier configs with matching npm scripts, integrate into CI/pre-commit.
   - Extend Jest beyond the single component test with at least one screen-level test covering upload/history flows.
 
-  ## 5. Dependency & Build Hygiene
-  - Remove `package-lock.json` from `.gitignore`, generate a fresh lockfile, and commit it.
-  - Clean and git-ignore build artefacts that don’t belong in source (`dist/`, `shared/dist/`, `frontend/node_modules/`), ensuring new
-  contributors start from a clean state.
+  ## 5. Dependency & Build Hygiene — ✅ Completed
+  - Added the generated `package-lock.json` to source control and refreshed it with `npm install --package-lock-only`.
+  - Extended `.gitignore` to cover nested build outputs like `shared/dist` and `frontend/node_modules/` so clones start clean.
 
   ## Newly Identified Issues
   - `npx tsc --noEmit` currently fails due to missing `Colors.tint`, an unused `@ts-expect-error`, and unresolved `@react-navigation/stack` types.
