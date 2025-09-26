@@ -4,6 +4,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import supabase, { saveSession } from "../../lib/supabase";
 import Colors from "../../constants/Colors";
 import LogoHeader from "@/components/LogoHeader";
+import * as Linking from "expo-linking";
 
 export default function LoginScreen() {
     const [email, setEmail] = useState("");
@@ -33,8 +34,9 @@ export default function LoginScreen() {
 
         setLoading(true);
         try {
+            const redirectTo = Linking.createURL('/reset-password');
             const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: `${window.location.origin}/reset-password`,
+                redirectTo,
             });
 
             if (error) throw error;

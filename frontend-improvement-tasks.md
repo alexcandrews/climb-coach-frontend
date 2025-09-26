@@ -5,9 +5,8 @@
   - `lib/api/client.ts` consumes the unified runtime base URL.
   - Added `.env.example` documenting required `EXPO_PUBLIC_*` values and the OpenAPI generation command.
 
-  ## 2. Auth & Navigation UX
-  - Update the password-reset redirect in `app/(auth)/login.tsx` to use `Linking.createURL` (or Expo’s auth helpers) instead of
-  `window.location` for native compatibility.
+  ## 2. Auth & Navigation UX — ✅ Completed
+  - `app/(auth)/login.tsx` now uses `Linking.createURL('/reset-password')` so the Supabase reset flow works on native and web.
 
   ## 3. Logging Hygiene
   - Wrap verbose `console.log` statements (e.g., Supabase creds in `lib/supabase.tsx`, upload logs in `lib/api/videos.ts`, history fetch logs
