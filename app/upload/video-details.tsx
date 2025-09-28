@@ -200,19 +200,19 @@ export default function VideoUploadDetailsScreen() {
                 if (result.error) {
                     throw new Error(result.error);
                 }
-                
-                setStatus('Upload successful!');
-                
-                // Navigate immediately and show toast/alert after navigation
+
+                const finalStatus = result.status || 'processing';
+                setStatus(finalStatus === 'pending_processing'
+                    ? 'Upload complete! Preparing analysis...'
+                    : 'Upload complete! Analysis starting shortly...');
+
                 router.replace('/(tabs)/history');
-                
-                // Short delay before showing alert to ensure navigation has started
+
                 setTimeout(() => {
-                    // Show success message after navigation starts
-                    Alert.alert(
-                        'Upload Successful', 
-                        'Your video has been uploaded and is being analyzed in the background. You can view it in your video history.'
-                    );
+                    const message = finalStatus === 'pending_processing'
+                        ? 'Your video upload is complete. We will begin processing it in just a moment.'
+                        : 'Your video has been uploaded and is being analyzed in the background. You can view it in your video history.';
+                    Alert.alert('Upload Successful', message);
                 }, 100);
             } else {
                 throw new Error('No video selected');

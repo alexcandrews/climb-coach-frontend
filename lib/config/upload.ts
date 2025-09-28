@@ -1,19 +1,24 @@
 /**
- * Upload configuration constants
+ * Upload configuration constants for the direct-to-storage flow.
  */
 export const UPLOAD_CONFIG = {
   /**
-   * Threshold in bytes above which to use chunked upload
+   * Threshold in bytes after which we fall back to resumable uploads (Supabase recommends 6 MB).
    */
-  CHUNKED_UPLOAD_THRESHOLD: 5 * 1024 * 1024, // 5MB
-  
+  RESUMABLE_UPLOAD_THRESHOLD: 6 * 1024 * 1024,
+
   /**
-   * Size of each chunk in bytes
+   * Preferred chunk size for tus-js-client uploads.
    */
-  CHUNK_SIZE: 3 * 1024 * 1024, // 3MB chunks
-  
+  RESUMABLE_CHUNK_SIZE: 6 * 1024 * 1024,
+
   /**
-   * Maximum number of chunks to upload in parallel
+   * Cache control header to send when uploading to storage.
    */
-  MAX_CONCURRENT_UPLOADS: 4
-}; 
+  DEFAULT_CACHE_CONTROL: '3600',
+
+  /**
+   * Maximum number of retry attempts for resumable upload failures.
+   */
+  MAX_RESUMABLE_RETRIES: 5
+};

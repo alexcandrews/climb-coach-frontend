@@ -1,7 +1,8 @@
 import api from '../api';
-import { Platform } from 'react-native';
 import supabase from '../supabase';
-import { v4 as uuidv4 } from 'uuid';
+import * as FileSystem from 'expo-file-system';
+import { Upload } from 'tus-js-client';
+import { Platform } from 'react-native';
 import { UPLOAD_CONFIG } from '../config/upload';
 
 const debugLog = (...args: unknown[]) => {
@@ -12,6 +13,42 @@ const debugLog = (...args: unknown[]) => {
 
 debugLog('🔧 API Base URL:', api.defaults.baseURL || 'Not set');
 debugLog('🔧 API Timeout:', api.defaults.timeout || 'Default');
+
+const EXTENSION_TO_MIME: Record<string, string> = {
+    mp4: 'video/mp4',
+    mov: 'video/quicktime',
+    qt: 'video/quicktime',
+    avi: 'video/x-msvideo',
+    webm: 'video/webm',
+    mpg: 'video/mpeg',
+    mpeg: 'video/mpeg'
+};
+
+const inferMimeTypeFromUri = (uri?: string, fallback: string = 'video/mp4'): string => {
+    if (!uri) return fallback;
+    const lowerUri = uri.toLowerCase();
+    const queryless = lowerUri.split('?')[0];
+    const parts = queryless.split('.');
+    const extension = parts.length > 1 ? parts.pop() ?? '' : '';
+    if (extension && EXTENSION_TO_MIME[extension]) {
+        return EXTENSION_TO_MIME[extension];
+    }
+    return fallback;
+};
+
+const inferOriginalFilename = (uri?: string): string | undefined => {
+    if (!uri) return undefined;
+    const sanitized = uri.split('?')[0];
+    const segments = sanitized.split('/');
+    const last = segments.pop();
+    if (!last) return undefined;
+    if (last.startsWith('cache-') || last.includes('expo-file-system')) {
+        return undefined;
+    }
+    return last;
+};
+
+const fallbackFileName = () => `upload-${Date.now()}.mp4`;
 
 export interface UserVideo {
     id: string;
@@ -31,7 +68,7 @@ export interface VideoDetails {
     location: string;
     createdAt: string;
     insights: CoachingInsight[];
-    analysis_status: 'not started' | 'in progress' | 'complete' | 'error';
+    analysis_status: 'uploading' | 'pending_processing' | 'processing' | 'analyzing' | 'not started' | 'in progress' | 'complete' | 'error';
 }
 
 export interface CoachingInsight {
@@ -47,7 +84,7 @@ export interface CoachingInsight {
 export interface UploadResult {
     url?: string;
     id?: string;
-    status: 'uploading' | 'processing' | 'completed' | 'failed';
+    status: 'uploading' | 'pending_processing' | 'processing' | 'complete' | 'error';
     error?: string;
 }
 
@@ -90,7 +127,7 @@ export const getVideo = async (videoId: string): Promise<VideoDetails | null> =>
         if (response.status === 200 && response.data) {
             // Ensure analysis_status is present
             if (!('analysis_status' in response.data)) {
-                response.data.analysis_status = 'not started';
+                response.data.analysis_status = 'uploading';
             }
             return response.data;
         }
@@ -102,305 +139,207 @@ export const getVideo = async (videoId: string): Promise<VideoDetails | null> =>
 };
 
 /**
- * Creates a FormData object from a video URI
- * @param videoUri The URI of the video to upload
- * @returns FormData object with the video appended
- */
-export const createVideoFormData = async (videoUri: string): Promise<FormData> => {
-    const formData = new FormData();
-
-    if (Platform.OS === "web") {
-        // Special handling for web
-        const response = await fetch(videoUri);
-        const blob = await response.blob();
-        formData.append("video", new File([blob], "upload.mp4", { type: "video/mp4" }));
-    } else {
-        // Mobile (iOS/Android)
-        formData.append("video", {
-            uri: videoUri,
-            name: "upload.mp4",
-            type: "video/mp4",
-        } as any);
-    }
-
-    return formData;
-};
-
-/**
- * Helper function to upload a single chunk with retry logic
- * @param bucketName Storage bucket name
- * @param filePath Full path for the chunk file
- * @param chunkBlob Blob data for this chunk
- * @param maxAttempts Maximum number of retry attempts
- * @returns Promise that resolves when upload is successful
- */
-const uploadChunkWithRetry = async (
-    bucketName: string,
-    filePath: string, 
-    chunkBlob: Blob, 
-    maxAttempts: number = 3
-): Promise<void> => {
-    let attempts = 0;
-    
-    while (attempts < maxAttempts) {
-        try {
-            const { error } = await supabase.storage
-                .from(bucketName)
-                .upload(filePath, chunkBlob, {
-                    contentType: 'application/octet-stream',
-                    upsert: true,
-                });
-                
-            if (error) throw error;
-            return; // Success, exit function
-        } catch (error) {
-            console.error(`❌ Error uploading chunk ${filePath}, attempt ${attempts + 1}:`, error);
-            attempts++;
-            
-            if (attempts >= maxAttempts) {
-                throw new Error(`Failed to upload chunk ${filePath} after ${maxAttempts} attempts`);
-            }
-            
-            // Exponential backoff
-            const delay = Math.pow(2, attempts) * 1000;
-            debugLog(`⏱️ Retrying chunk ${filePath} after ${delay}ms delay...`);
-            await new Promise(resolve => setTimeout(resolve, delay));
-        }
-    }
-};
-
-/**
- * Uploads a video to the server using chunked upload approach
- * This is a wrapper around uploadVideoDirectToSupabase for backward compatibility
- * All uploads now use the chunked upload approach regardless of size
- * @param videoUri The URI of the video to upload
- * @param onProgress Optional callback for upload progress
- * @returns Promise with upload result
+ * Upload a video by delegating to the direct Supabase Storage flow.
+ * @param videoUri Local URI of the video to upload
+ * @param onProgress Optional progress callback (0-100)
  */
 export const uploadVideo = async (
     videoUri: string,
     onProgress?: (progress: number) => void
 ): Promise<UploadResult> => {
-    debugLog('🧩 Using standard chunked upload approach');
     try {
-        // All videos now use the chunked upload approach
-        return uploadVideoDirectToSupabase({ videoUri, onProgress });
+        return await uploadVideoDirectToSupabase({ videoUri, onProgress });
     } catch (error: any) {
-        console.error("Upload Error:", error);
-        let errorMessage = "Error uploading video";
-        
-        if (error.response) {
-            // Server responded with error
+        console.error('Upload Error:', error);
+        let errorMessage = 'Error uploading video';
+
+        if (error?.response) {
             const data = error.response.data;
-            errorMessage = data?.error || data?.details || data?.message || 
+            errorMessage = data?.error || data?.details || data?.message ||
                 `Server error: ${error.response.status}`;
-        } else if (error.request) {
-            // Request made but no response
-            errorMessage = "No response from server. Check your internet connection.";
-        } else {
-            // Error in request setup
-            errorMessage = error.message || "Failed to make request";
+        } else if (error?.request) {
+            errorMessage = 'No response from server. Check your internet connection.';
+        } else if (error instanceof Error) {
+            errorMessage = error.message;
         }
-        
-        return { error: errorMessage, status: 'failed' };
+
+        return { error: errorMessage, status: 'error' } as UploadResult;
     }
 };
 
+interface DirectUploadParams {
+    videoUri: string;
+    title?: string;
+    location?: string;
+    onProgress?: (progress: number) => void;
+}
+
+const toTusMetadata = (metadata: Record<string, string | number | undefined>): Record<string, string> => {
+    return Object.entries(metadata).reduce<Record<string, string>>((acc, [key, value]) => {
+        if (value === undefined || value === null) {
+            return acc;
+        }
+        acc[key] = String(value);
+        return acc;
+    }, {});
+};
+
 /**
- * Uploads a video directly to Supabase Storage and notifies the backend for processing
- * The backend processing happens asynchronously after this function returns
- * @param params Upload parameters object
- * @returns Promise with upload result
+ * Uploads a video directly to Supabase Storage and notifies the backend for processing.
  */
 export const uploadVideoDirectToSupabase = async (
-    params: {
-        videoUri: string;
-        title?: string;
-        location?: string;
-        onProgress?: (progress: number) => void;
-    }
+    params: DirectUploadParams
 ): Promise<UploadResult> => {
     const { videoUri, title = 'Untitled Video', location, onProgress } = params;
-    
-    debugLog('📣 uploadVideoDirectToSupabase called with params:', { 
-        videoUri: videoUri ? `${videoUri.substring(0, 30)}...` : null, 
-        title, 
-        location 
-    });
-    
-    try {
-        // Check authentication status
-        debugLog('📣 Checking authentication status...');
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.access_token) {
-            console.error('❌ Authentication failed: No session token');
-            throw new Error('Not authenticated');
-        }
-        debugLog('✅ User authenticated');
 
-        // Get the user ID
-        debugLog('📣 Getting user ID...');
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-            console.error('❌ Authentication failed: No user found');
-            throw new Error('User not found');
-        }
-        debugLog(`✅ User ID obtained: ${user.id.substring(0, 8)}...`);
-
-        // Get the video blob
-        debugLog('📣 Getting video blob...');
-        let blob: Blob;
-        try {
-            if (Platform.OS === "web") {
-                const response = await fetch(videoUri);
-                blob = await response.blob();
-            } else {
-                // For mobile platforms, fetch the blob
-                const response = await fetch(videoUri);
-                blob = await response.blob();
-            }
-            debugLog(`✅ Video blob obtained, size: ${(blob.size / (1024 * 1024)).toFixed(2)}MB, type: ${blob.type}`);
-        } catch (blobError: any) {
-            console.error('❌ Failed to get blob from videoUri:', blobError);
-            throw new Error(`Failed to get video data: ${blobError.message}`);
-        }
-
-        // Calculate total size
-        const totalSize = blob.size;
-        debugLog(`📊 Video size: ${(totalSize / (1024 * 1024)).toFixed(2)}MB`);
-        
-        // Start progress
-        onProgress?.(5);
-        
-        // Use chunked upload for all files regardless of size
-        debugLog('🧩 Using chunked upload approach for all files');
-        
-        // Set up chunk parameters - for small files this might just be 1 chunk
-        const totalChunks = Math.max(1, Math.ceil(totalSize / UPLOAD_CONFIG.CHUNK_SIZE));
-        
-        // Initialize the upload with backend
-        debugLog('🚀 Initializing upload with backend...');
-        debugLog('🔧 API Call Info for initialization:', {
-            baseURL: api.defaults.baseURL,
-            method: 'POST',
-            endpoint: '/api/videos/upload/initialize',
-            data: {
-                title,
-                location,
-                totalChunks,
-                fileSize: totalSize,
-                mimeType: blob.type || 'video/mp4'
-            }
-        });
-        
-        try {
-            const initResponse = await api.post('/api/videos/upload/initialize', {
-                title,
-                location,
-                totalChunks,
-                fileSize: totalSize,
-                mimeType: blob.type || 'video/mp4'
-            });
-            debugLog('✅ Upload initialization successful, response:', initResponse.data);
-            
-            if (!initResponse.data.uploadId) {
-                console.error('❌ Upload initialization failed: No upload ID in response');
-                throw new Error('Failed to initialize upload: No upload ID received');
-            }
-            
-            const uploadId = initResponse.data.uploadId;
-            debugLog(`✅ Upload initialized with ID: ${uploadId}`);
-            
-            let uploadedChunks = 0;
-            
-            debugLog(`📊 Splitting file into ${totalChunks} chunks of ${UPLOAD_CONFIG.CHUNK_SIZE / 1024} KB each with ${UPLOAD_CONFIG.MAX_CONCURRENT_UPLOADS} parallel uploads`);
-            
-            // Process chunks in batches for controlled parallelism
-            for (let i = 0; i < totalChunks; i += UPLOAD_CONFIG.MAX_CONCURRENT_UPLOADS) {
-                const uploadPromises = [];
-                const batchSize = Math.min(UPLOAD_CONFIG.MAX_CONCURRENT_UPLOADS, totalChunks - i);
-                
-                // Create a batch of promises for concurrent upload
-                for (let j = 0; j < batchSize; j++) {
-                    const chunkIndex = i + j;
-                    const start = chunkIndex * UPLOAD_CONFIG.CHUNK_SIZE;
-                    const end = Math.min(start + UPLOAD_CONFIG.CHUNK_SIZE, totalSize);
-                    const chunkBlob = blob.slice(start, end);
-                    const userId = user.id;
-                    const chunkPath = `${userId}/${userId}_${uploadId}.part${chunkIndex}`;
-                    
-                    // Add more detailed logging about the chunk
-                    debugLog(`📦 Preparing chunk ${chunkIndex+1}/${totalChunks}:`, {
-                        path: chunkPath,
-                        size: chunkBlob.size,
-                        start,
-                        end
-                    });
-                    
-                    // Add to batch of parallel uploads
-                    uploadPromises.push(
-                        uploadChunkWithRetry('video-chunks', chunkPath, chunkBlob)
-                            .then(() => {
-                                // Update progress for each completed chunk
-                                uploadedChunks++;
-                                const progress = Math.min(Math.round((uploadedChunks / totalChunks) * 90) + 5, 95);
-                                onProgress?.(progress);
-                                debugLog(`✅ Chunk ${chunkIndex+1}/${totalChunks} uploaded successfully (${((uploadedChunks/totalChunks)*100).toFixed(0)}%) to ${chunkPath}`);
-                                
-                                // Update the backend about chunk progress
-                                // This is a fire-and-forget call - we don't wait for response
-                                api.post('/api/videos/update-chunk-progress', {
-                                    uploadId: uploadId,
-                                    uploadedChunks: uploadedChunks
-                                }).catch(error => {
-                                    console.warn('⚠️ Failed to update chunk progress:', error);
-                                });
-                            })
-                            .catch(error => {
-                                console.error(`❌ Failed to upload chunk ${chunkIndex+1}/${totalChunks}:`, error);
-                                throw error; // Re-throw to be caught by Promise.all
-                            })
-                    );
-                }
-                
-                // Wait for current batch to complete before moving to next batch
-                try {
-                    await Promise.all(uploadPromises);
-                    debugLog(`✅ Batch ${i/UPLOAD_CONFIG.MAX_CONCURRENT_UPLOADS + 1} completed successfully`);
-                } catch (batchError: any) {
-                    console.error(`❌ Error in upload batch:`, batchError);
-                    throw new Error(`Failed to upload batch: ${batchError.message}`);
-                }
-            }
-            
-            debugLog(`✅ Successfully uploaded all ${totalChunks} chunks in parallel`);
-            
-            // Update progress to indicate completion of upload
-            onProgress?.(100);
-            
-            // Return success - backend will automatically combine chunks when all are uploaded
-            return { 
-                url: `${supabase.storage.from('videos-complete').getPublicUrl(`${user.id}/${user.id}_${uploadId}`).data.publicUrl}`,
-                id: uploadId,
-                status: 'processing'
-            };
-        } catch (initError: any) {
-            console.error('❌ Upload initialization failed:', initError);
-            console.error('Error details:', initError.response?.data || initError.message);
-            throw new Error(`Failed to initialize upload: ${initError.message}`);
-        }
-    } catch (error: any) {
-        console.error('❌ Error uploading video:', error);
-        throw error;
+    if (!videoUri) {
+        throw new Error('No video selected');
     }
+
+    let mimeType = inferMimeTypeFromUri(videoUri);
+    let originalName = inferOriginalFilename(videoUri) || fallbackFileName();
+    let fileSize = 0;
+    let tusUploadData: any;
+    let cachedBlob: Blob | null = null;
+
+    if (Platform.OS === 'web') {
+        const response = await fetch(videoUri);
+        const blob = await response.blob();
+        cachedBlob = blob;
+        fileSize = blob.size;
+        mimeType = blob.type || mimeType;
+        if (!originalName) {
+            originalName = fallbackFileName();
+        }
+        tusUploadData = new File([blob], originalName, { type: mimeType });
+    } else {
+        const fileInfo = await FileSystem.getInfoAsync(videoUri, { size: true });
+        if (!fileInfo.exists) {
+            throw new Error('Video file not found at provided URI');
+        }
+
+        fileSize = fileInfo.size ?? 0;
+        if (!fileSize) {
+            throw new Error('Video file appears to be empty');
+        }
+
+        tusUploadData = {
+            uri: videoUri,
+            name: originalName,
+            type: mimeType,
+            size: fileSize
+        };
+    }
+
+    if (!fileSize) {
+        throw new Error('Video file appears to be empty');
+    }
+
+    onProgress?.(5);
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+        throw new Error('Not authenticated');
+    }
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        throw new Error('User not found');
+    }
+
+    const shouldUseTus = fileSize >= UPLOAD_CONFIG.RESUMABLE_UPLOAD_THRESHOLD;
+
+    const initResponse = await api.post('/api/videos/upload/initialize', {
+        title,
+        location,
+        fileSize,
+        mimeType,
+        originalName
+    });
+
+    const initData = initResponse.data || {};
+    if (!initData.videoId || !initData.objectName) {
+        throw new Error('Failed to initialise upload: missing upload metadata');
+    }
+
+    const targetBucket = initData.bucket || initData.metadata?.bucketName || 'videos-complete';
+    const objectName: string = initData.objectName;
+    const publicUrl: string | undefined = initData.publicUrl;
+    const uploadUrl: string = initData.uploadUrl;
+    const chunkSize: number = initData.chunkSize || UPLOAD_CONFIG.RESUMABLE_CHUNK_SIZE;
+    const uploadMetadata = toTusMetadata({
+        bucketName: targetBucket,
+        objectName,
+        contentType: mimeType,
+        cacheControl: initData.metadata?.cacheControl || UPLOAD_CONFIG.DEFAULT_CACHE_CONTROL,
+        videoId: initData.videoId,
+        filename: originalName
+    });
+
+    const useTus = initData.useTus ?? shouldUseTus;
+
+    if (useTus) {
+        await new Promise<void>((resolve, reject) => {
+            const upload = new Upload(
+                tusUploadData,
+                {
+                    endpoint: uploadUrl,
+                    chunkSize,
+                    metadata: uploadMetadata,
+                    headers: {
+                        Authorization: `Bearer ${session.access_token}`,
+                        'x-upsert': 'false'
+                    },
+                    uploadDataDuringCreation: true,
+                    retryDelays: [0, 3000, 10000, 30000, 60000],
+                    onError: (err) => reject(err),
+                    onProgress: (bytesUploaded, bytesTotal) => {
+                        if (bytesTotal > 0) {
+                            const progress = Math.round((bytesUploaded / bytesTotal) * 90) + 5;
+                            onProgress?.(Math.min(95, Math.max(5, progress)));
+                        }
+                    },
+                    onSuccess: () => resolve()
+                }
+            );
+
+            upload.start();
+        });
+    } else {
+        const blob = cachedBlob || (await (await fetch(videoUri)).blob());
+
+        const { error: uploadError } = await supabase.storage
+            .from(targetBucket)
+            .upload(objectName, blob, {
+                cacheControl: uploadMetadata.cacheControl,
+                contentType: mimeType,
+                upsert: false
+            });
+
+        if (uploadError) {
+            throw uploadError;
+        }
+
+        onProgress?.(95);
+    }
+
+    const markResponse = await api.post(`/api/videos/${initData.videoId}/mark-uploaded`, {
+        fileSize,
+        mimeType
+    });
+
+    const nextStatus = (markResponse.data?.status as UploadResult['status'] | undefined) || 'processing';
+
+    onProgress?.(100);
+
+    return {
+        url: publicUrl,
+        id: initData.videoId,
+        status: nextStatus
+    };
 };
 
-/**
- * Parses coaching moments from the API response
- * @param data Raw coaching data from API
- * @returns Array of parsed coaching insights
- */
-export const parseCoachingMoments = (data: any): CoachingInsight[] => {
+const parseCoachingMoments = (data: any): CoachingInsight[] => {
     if (!data || !Array.isArray(data)) return [];
     return data.map(item => ({
         timestamp: item.timestamp || 0,
@@ -416,7 +355,7 @@ export const parseCoachingMoments = (data: any): CoachingInsight[] => {
  * @returns Promise with analysis status
  */
 export const checkVideoProcessingStatus = async (videoId: string): Promise<{
-    status: 'pending' | 'completed' | 'failed' | 'unknown';
+    status: 'pending' | 'complete' | 'error' | 'unknown';
     hasInsights: boolean;
     insightsCount: number;
 }> => {
@@ -429,7 +368,7 @@ export const checkVideoProcessingStatus = async (videoId: string): Promise<{
             // Check if there are coaching moments
             if (data.coachingMoments && data.coachingMoments.length > 0) {
                 return {
-                    status: 'completed',
+                    status: 'complete',
                     hasInsights: true,
                     insightsCount: data.coachingMoments.length
                 };
@@ -438,8 +377,8 @@ export const checkVideoProcessingStatus = async (videoId: string): Promise<{
             // If analysis_status field exists, use it
             if (data.analysis_status) {
                 return {
-                    status: data.analysis_status === 'completed' ? 'completed' : 
-                           data.analysis_status === 'failed' ? 'failed' : 'pending',
+                    status: data.analysis_status === 'complete' ? 'complete' : 
+                           data.analysis_status === 'error' ? 'error' : 'pending',
                     hasInsights: false,
                     insightsCount: 0
                 };

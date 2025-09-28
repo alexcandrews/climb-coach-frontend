@@ -17,7 +17,7 @@ import {
 } from '@/lib/api/videos';
 
 // Import seed data for development
-const SEED_VIDEO_URI = require('../../seeds/climbing-video.mp4');
+const SEED_VIDEO_URI = require('../../seeds/climbing-video-03mb.mp4');
 const SEED_COACHING_MOMENTS = require('../../seeds/coaching-moments.json');
 
 export default function UploadScreen() {

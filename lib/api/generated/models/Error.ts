@@ -3,13 +3,6 @@
 /* tslint:disable */
 /* eslint-disable */
 export type Error = {
-    /**
-     * Error type
-     */
-    error: string;
-    /**
-     * Error message
-     */
-    message?: string;
+    error?: string;
 };
 
