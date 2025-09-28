@@ -12,7 +12,6 @@ import { APP_TEXT_STYLES } from "@/constants/Typography";
 
 // Import video services
 import { 
-    parseCoachingMoments,
     CoachingInsight
 } from '@/lib/api/videos';
 
