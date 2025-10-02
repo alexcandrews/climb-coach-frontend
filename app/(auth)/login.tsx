@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { View, TextInput, Text, Alert, ActivityIndicator, StyleSheet, TouchableOpacity, StatusBar } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import supabase, { saveSession } from "../../lib/supabase";
+import supabase from "../../lib/supabase";
 import Colors from "../../constants/Colors";
 import LogoHeader from "@/components/LogoHeader";
 import * as Linking from "expo-linking";
@@ -103,8 +103,7 @@ export default function LoginScreen() {
             }
 
             if (data?.session) {
-                // Save session locally
-                await saveSession(data.session);
+                // Supabase automatically persists session via storage adapter
                 router.replace("/upload");
             } else {
                 setErrorMessage("No session created. Please try again.");

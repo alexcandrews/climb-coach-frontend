@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
 import supabase from '../../lib/supabase';
+import { resetApiClient } from '../../lib/api/client';
 
 const debugLog = (...args: unknown[]) => {
     if (__DEV__) {
@@ -38,6 +39,13 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
             debugLog('Auth state changed:', event, !!session);
             setIsAuthenticated(!!session);
+
+            // Reset API client on auth state changes to ensure fresh token
+            if (event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+                debugLog('Resetting API client due to auth event:', event);
+                resetApiClient();
+            }
+
             if (!session && !isLoading && !isPublicPath) {
                 router.replace('/login');
             }

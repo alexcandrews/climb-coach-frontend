@@ -6,14 +6,15 @@ import { API_CONFIG } from '@/app/config';
 let apiClient: ClimbCoachApi | null = null;
 
 export const getApiClient = async (): Promise<ClimbCoachApi> => {
-  if (!apiClient) {
-    // Get session from Supabase
-    const { data: { session } } = await supabase.auth.getSession();
-    const token = session?.access_token;
-    
+  // Always get fresh session from Supabase (it handles caching internally)
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+
+  // Reset client if token has changed or doesn't exist
+  if (!apiClient || (apiClient as any)._token !== token) {
     apiClient = new ClimbCoachApi({
       BASE: API_CONFIG.BASE_URL,
-      HEADERS: token 
+      HEADERS: token
         ? {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -22,8 +23,11 @@ export const getApiClient = async (): Promise<ClimbCoachApi> => {
             'Content-Type': 'application/json',
           },
     });
+
+    // Store current token for comparison
+    (apiClient as any)._token = token;
   }
-  
+
   return apiClient;
 };
 
