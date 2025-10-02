@@ -35,4 +35,8 @@ Thumbs.db
 .vscode/
 .idea/
 
+# Ignore Jest cache and coverage
+.jest-cache/
+coverage/
+
 climbing-video-1*
