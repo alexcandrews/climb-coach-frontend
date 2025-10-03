@@ -26,6 +26,7 @@ module.exports = [
       'nativewind-env.d.ts',
       'lib/api/generated/**',
       'components/__tests__/StyledText-test.js',
+      'navigation/**',
     ],
   },
 
