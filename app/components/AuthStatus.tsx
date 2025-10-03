@@ -37,7 +37,7 @@ export default function AuthStatus() {
         router.replace('/login');
     };
 
-    if (isAuthenticated === null) return null;
+    if (isAuthenticated === null) {return null;}
 
     return (
         <View style={{ 

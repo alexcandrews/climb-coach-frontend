@@ -103,8 +103,8 @@ export default function VideoUploadDetailsScreen() {
 
     // Improved thumbnail generation effect
     useEffect(() => {
-      if (!videoUri) return;
-      let uri: string = Array.isArray(videoUri) ? videoUri[0] : videoUri;
+      if (!videoUri) {return;}
+      const uri: string = Array.isArray(videoUri) ? videoUri[0] : videoUri;
       setGeneratingThumbnail(true);
       setThumbnail(null);
       // Clean up previous object URL
@@ -144,7 +144,7 @@ export default function VideoUploadDetailsScreen() {
               video.currentTime = 0.1;
             });
             video.addEventListener('seeked', () => {
-              if (seeked) return; // Prevent double-calling
+              if (seeked) {return;} // Prevent double-calling
               seeked = true;
               try {
                 const canvas = document.createElement('canvas');

@@ -54,7 +54,7 @@ export default function VideoPlayer({
     }, [seekTo]);
 
     const handlePlayPause = async () => {
-        if (!videoRef.current) return;
+        if (!videoRef.current) {return;}
 
         if (isPlaying) {
             await videoRef.current.pauseAsync();
@@ -83,7 +83,7 @@ export default function VideoPlayer({
     }, [isSeeking, onPositionChange, shouldUpdatePosition]);
 
     const handlePlaybackStatusUpdate = useCallback((status: AVPlaybackStatus) => {
-        if (!status.isLoaded) return;
+        if (!status.isLoaded) {return;}
         
         if (status.didJustFinish) {
             setIsPlaying(false);
@@ -107,7 +107,7 @@ export default function VideoPlayer({
                 videoElement.addEventListener('timeupdate', handleWebTimeUpdate);
             }
         } else {
-            if (!status.isLoaded) return;
+            if (!status.isLoaded) {return;}
             const duration = status.durationMillis ? status.durationMillis / 1000 : 0;
             onLoadComplete?.(duration);
         }

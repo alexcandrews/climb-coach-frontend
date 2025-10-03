@@ -62,7 +62,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 export async function logoutUser() {
     try {
         const { error } = await supabase.auth.signOut();
-        if (error) throw error;
+        if (error) {throw error;}
         return true;
     } catch (error) {
         logger.error('Logout error:', error);

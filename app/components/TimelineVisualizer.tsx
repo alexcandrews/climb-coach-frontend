@@ -35,7 +35,7 @@ export default function TimelineVisualizer({
     );
 
     const handleScrub = (evt: GestureResponderEvent) => {
-        if (!videoDuration || !onSeek) return;
+        if (!videoDuration || !onSeek) {return;}
 
         const { locationX } = evt.nativeEvent;
         const position = (locationX / timelineWidth) * videoDuration;

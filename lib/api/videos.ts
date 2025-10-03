@@ -20,7 +20,7 @@ const EXTENSION_TO_MIME: Record<string, string> = {
 };
 
 const inferMimeTypeFromUri = (uri?: string, fallback: string = 'video/mp4'): string => {
-    if (!uri) return fallback;
+    if (!uri) {return fallback;}
     const lowerUri = uri.toLowerCase();
     const queryless = lowerUri.split('?')[0];
     const parts = queryless.split('.');
@@ -32,11 +32,11 @@ const inferMimeTypeFromUri = (uri?: string, fallback: string = 'video/mp4'): str
 };
 
 const inferOriginalFilename = (uri?: string): string | undefined => {
-    if (!uri) return undefined;
+    if (!uri) {return undefined;}
     const sanitized = uri.split('?')[0];
     const segments = sanitized.split('/');
     const last = segments.pop();
-    if (!last) return undefined;
+    if (!last) {return undefined;}
     if (last.startsWith('cache-') || last.includes('expo-file-system')) {
         return undefined;
     }
@@ -335,7 +335,7 @@ export const uploadVideoDirectToSupabase = async (
 };
 
 const parseCoachingMoments = (data: any): CoachingInsight[] => {
-    if (!data || !Array.isArray(data)) return [];
+    if (!data || !Array.isArray(data)) {return [];}
     return data.map(item => ({
         timestamp: item.timestamp || 0,
         coaching: item.feedback || "",

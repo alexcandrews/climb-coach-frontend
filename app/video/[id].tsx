@@ -127,13 +127,13 @@ export default function VideoScreen() {
     const pollableStatuses = ['uploading', 'pending_processing', 'processing', 'analyzing', 'not started', 'in progress'];
     if (video && pollableStatuses.includes(video.analysis_status)) {
       interval = setInterval(async () => {
-        if (!id || typeof id !== 'string') return;
+        if (!id || typeof id !== 'string') {return;}
         try {
           const updatedVideo = await getVideo(id);
           if (updatedVideo && isMounted) {
             setVideo(updatedVideo);
             if (!pollableStatuses.includes(updatedVideo.analysis_status)) {
-              if (interval) clearInterval(interval);
+              if (interval) {clearInterval(interval);}
             }
           }
         } catch (err) {
@@ -143,7 +143,7 @@ export default function VideoScreen() {
     }
     return () => {
       isMounted = false;
-      if (interval) clearInterval(interval);
+      if (interval) {clearInterval(interval);}
     };
   }, [video, id]);
 
@@ -180,7 +180,7 @@ export default function VideoScreen() {
 
   // Render platform-specific video player
   const renderVideoPlayer = () => {
-    if (!video) return null;
+    if (!video) {return null;}
     
     if (Platform.OS === 'web') {
       // Return the container that will be populated by the useEffect

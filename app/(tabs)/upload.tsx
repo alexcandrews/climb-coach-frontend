@@ -45,14 +45,14 @@ export default function UploadScreen() {
         }
 
         // Pick a video from the Photos app
-        let result = await ImagePicker.launchImageLibraryAsync({
+        const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Videos,
             allowsEditing: false,
             quality: 1,
         });
 
-        if (result.canceled) return;
-        let video = result.assets[0];
+        if (result.canceled) {return;}
+        const video = result.assets[0];
 
         // Navigate to the new details screen with the video URI
         router.push({ pathname: '/upload/video-details', params: { videoUri: video.uri } });

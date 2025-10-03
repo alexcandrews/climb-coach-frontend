@@ -39,7 +39,7 @@ export default function LoginScreen() {
                 redirectTo,
             });
 
-            if (error) throw error;
+            if (error) {throw error;}
             Alert.alert(
                 "Password Reset Email Sent",
                 "Check your email for a password reset link."

@@ -7,9 +7,11 @@ import LogoHeader from '@/components/LogoHeader';
 import logger from '../../lib/utils/logger';
 
 function getTokensFromHash() {
-  if (typeof window === 'undefined' || !window.location) return { access_token: '', refresh_token: '' };
+  if (typeof window === 'undefined' || !window.location) {
+    return { access_token: '', refresh_token: '' };
+  }
   try {
-    const hash = window.location.hash || '';
+    const hash = typeof window !== 'undefined' ? window.location.hash || '' : '';
     const params = new URLSearchParams(hash.replace(/^#/, ''));
     return {
       access_token: params.get('access_token') || '',
@@ -36,12 +38,12 @@ export default function ResetPasswordScreen() {
       setErrorMessage('');
       let session = null;
       const { access_token, refresh_token } = getTokensFromHash();
-      debugLog('[ResetPassword] Extracted access_token:', access_token);
-      debugLog('[ResetPassword] Extracted refresh_token:', refresh_token);
+      logger.dev('[ResetPassword] Extracted access_token:', access_token);
+      logger.dev('[ResetPassword] Extracted refresh_token:', refresh_token);
       if (access_token && refresh_token) {
-        debugLog('[ResetPassword] Calling supabase.auth.setSession...');
+        logger.dev('[ResetPassword] Calling supabase.auth.setSession...');
         const { data, error } = await supabase.auth.setSession({ access_token, refresh_token });
-        debugLog('[ResetPassword] setSession result:', { data, error });
+        logger.dev('[ResetPassword] setSession result:', { data, error });
         if (error) {
           logger.error('[ResetPassword] setSession error:', error);
           setErrorMessage('Invalid or expired reset link. Please request a new one.');
@@ -59,7 +61,7 @@ export default function ResetPasswordScreen() {
       // Double check session
       if (!session) {
         const { data: { session: currentSession } } = await supabase.auth.getSession();
-        debugLog('[ResetPassword] getSession result:', currentSession);
+        logger.dev('[ResetPassword] getSession result:', currentSession);
         if (!currentSession) {
           logger.error('[ResetPassword] No session after setSession');
           setErrorMessage('Invalid or expired reset link. Please request a new one.');
@@ -69,7 +71,7 @@ export default function ResetPasswordScreen() {
       }
       setSessionReady(true);
       setLoading(false);
-      debugLog('[ResetPassword] Session is ready, showing form.');
+      logger.dev('[ResetPassword] Session is ready, showing form.');
     }
     handleSession();
   }, []);

@@ -24,7 +24,7 @@ export default function CoachingMomentsList({
 
     // Find the active coaching moment based on current video position
     const activeIndex = useMemo(() => {
-        if (!moments.length) return -1;
+        if (!moments.length) {return -1;}
         
         // Find the last moment that's before or at the current position
         for (let i = moments.length - 1; i >= 0; i--) {
