@@ -12,13 +12,18 @@ const debugLog = (...args: unknown[]) => {
 };
 
 function getTokensFromHash() {
-  if (typeof window === 'undefined') return { access_token: '', refresh_token: '' };
-  const hash = window.location.hash;
-  const params = new URLSearchParams(hash.replace(/^#/, ''));
-  return {
-    access_token: params.get('access_token') || '',
-    refresh_token: params.get('refresh_token') || '',
-  };
+  if (typeof window === 'undefined' || !window.location) return { access_token: '', refresh_token: '' };
+  try {
+    const hash = window.location.hash || '';
+    const params = new URLSearchParams(hash.replace(/^#/, ''));
+    return {
+      access_token: params.get('access_token') || '',
+      refresh_token: params.get('refresh_token') || '',
+    };
+  } catch (err) {
+    console.error('Failed to parse tokens from URL hash:', err);
+    return { access_token: '', refresh_token: '' };
+  }
 }
 
 export default function ResetPasswordScreen() {

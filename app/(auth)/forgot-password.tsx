@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as Linking from 'expo-linking';
 import supabase from '../../lib/supabase';
 import Colors from '../../constants/Colors';
 import LogoHeader from '@/components/LogoHeader';
@@ -25,8 +26,13 @@ export default function ForgotPasswordScreen() {
     }
     setLoading(true);
     try {
+      // Platform-aware redirect URL
+      const redirectTo = Platform.OS === 'web' && typeof window !== 'undefined'
+        ? `${window.location.origin}/reset-password`
+        : Linking.createURL('/reset-password');
+
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo,
       });
       if (error) throw error;
       setSuccessMessage('Check your email for a password reset link.');

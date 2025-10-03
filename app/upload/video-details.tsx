@@ -57,31 +57,47 @@ export default function VideoUploadDetailsScreen() {
 
     // Inject CSS for web video player
     useEffect(() => {
-      if (Platform.OS === 'web') {
-        const styleElement = document.createElement('style');
-        styleElement.textContent = videoStyles;
-        document.head.appendChild(styleElement);
-        return () => {
-          document.head.removeChild(styleElement);
-        };
+      if (Platform.OS === 'web' && typeof document !== 'undefined') {
+        try {
+          const styleElement = document.createElement('style');
+          styleElement.textContent = videoStyles;
+          document.head.appendChild(styleElement);
+          return () => {
+            try {
+              document.head.removeChild(styleElement);
+            } catch (err) {
+              console.warn('Failed to remove style element:', err);
+            }
+          };
+        } catch (err) {
+          console.error('Failed to inject video styles:', err);
+        }
       }
     }, []);
 
     // Inject video element for web
     useEffect(() => {
-      if (Platform.OS === 'web' && videoContainerRef.current && videoUri) {
-        const container = videoContainerRef.current as HTMLDivElement;
-        container.innerHTML = '';
-        const videoElement = document.createElement('video');
-        videoElement.id = 'climb-coach-upload-video-player';
-        videoElement.src = videoUri as string;
-        videoElement.controls = true;
-        videoElement.playsInline = true;
-        videoElement.style.width = '100%';
-        videoElement.style.height = '100%';
-        videoElement.style.objectFit = 'contain';
-        videoElement.style.transform = 'rotate(0deg)';
-        container.appendChild(videoElement);
+      if (Platform.OS === 'web' && typeof document !== 'undefined' && videoContainerRef.current && videoUri) {
+        try {
+          const container = videoContainerRef.current as HTMLDivElement;
+          if (!container) {
+            console.warn('Video container ref is not available');
+            return;
+          }
+          container.innerHTML = '';
+          const videoElement = document.createElement('video');
+          videoElement.id = 'climb-coach-upload-video-player';
+          videoElement.src = videoUri as string;
+          videoElement.controls = true;
+          videoElement.playsInline = true;
+          videoElement.style.width = '100%';
+          videoElement.style.height = '100%';
+          videoElement.style.objectFit = 'contain';
+          videoElement.style.transform = 'rotate(0deg)';
+          container.appendChild(videoElement);
+        } catch (err) {
+          console.error('Failed to create video element:', err);
+        }
       }
     }, [videoUri, videoContainerRef.current]);
 
@@ -96,7 +112,7 @@ export default function VideoUploadDetailsScreen() {
         URL.revokeObjectURL(objectUrlRef.current);
         objectUrlRef.current = null;
       }
-      if (Platform.OS === 'web') {
+      if (Platform.OS === 'web' && typeof document !== 'undefined' && typeof URL !== 'undefined') {
         // If uri is a data URL, convert to blob and then to object URL
         if (uri.startsWith('data:')) {
           fetch(uri)
@@ -105,48 +121,66 @@ export default function VideoUploadDetailsScreen() {
               const objectUrl = URL.createObjectURL(blob);
               objectUrlRef.current = objectUrl;
               generateWebThumbnail(objectUrl);
+            })
+            .catch(err => {
+              console.error('Failed to convert data URL to blob:', err);
+              setGeneratingThumbnail(false);
             });
         } else {
           objectUrlRef.current = uri;
           generateWebThumbnail(uri);
         }
         function generateWebThumbnail(url: string) {
-          const video = document.createElement('video');
-          video.src = url;
-          video.crossOrigin = 'anonymous';
-          video.muted = true;
-          video.playsInline = true;
-          video.currentTime = 0.1; // Seek to 0.1s to avoid black frame
-          let seeked = false;
-          video.addEventListener('loadeddata', () => {
-            // Wait for enough data to be loaded
-            video.currentTime = 0.1;
-          });
-          video.addEventListener('seeked', () => {
-            if (seeked) return; // Prevent double-calling
-            seeked = true;
-            const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const ctx = canvas.getContext('2d');
-            if (ctx) {
-              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-              setThumbnail(canvas.toDataURL('image/png'));
-            }
+          try {
+            const video = document.createElement('video');
+            video.src = url;
+            video.crossOrigin = 'anonymous';
+            video.muted = true;
+            video.playsInline = true;
+            video.currentTime = 0.1; // Seek to 0.1s to avoid black frame
+            let seeked = false;
+            video.addEventListener('loadeddata', () => {
+              // Wait for enough data to be loaded
+              video.currentTime = 0.1;
+            });
+            video.addEventListener('seeked', () => {
+              if (seeked) return; // Prevent double-calling
+              seeked = true;
+              try {
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) {
+                  console.error('Failed to get canvas 2d context');
+                  setGeneratingThumbnail(false);
+                  return;
+                }
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                setThumbnail(canvas.toDataURL('image/png'));
+              } catch (err) {
+                console.error('Failed to generate thumbnail from video:', err);
+              } finally {
+                setGeneratingThumbnail(false);
+                // Clean up object URL
+                if (objectUrlRef.current) {
+                  URL.revokeObjectURL(objectUrlRef.current);
+                  objectUrlRef.current = null;
+                }
+              }
+            });
+            video.addEventListener('error', (err) => {
+              console.error('Video loading error for thumbnail:', err);
+              setGeneratingThumbnail(false);
+              if (objectUrlRef.current) {
+                URL.revokeObjectURL(objectUrlRef.current);
+                objectUrlRef.current = null;
+              }
+            });
+          } catch (err) {
+            console.error('Failed to create video element for thumbnail:', err);
             setGeneratingThumbnail(false);
-            // Clean up object URL
-            if (objectUrlRef.current) {
-              URL.revokeObjectURL(objectUrlRef.current);
-              objectUrlRef.current = null;
-            }
-          });
-          video.addEventListener('error', () => {
-            setGeneratingThumbnail(false);
-            if (objectUrlRef.current) {
-              URL.revokeObjectURL(objectUrlRef.current);
-              objectUrlRef.current = null;
-            }
-          });
+          }
         }
       } else {
         // Native: use Expo VideoThumbnails at 0.1s

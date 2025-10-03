@@ -63,45 +63,61 @@ export default function VideoScreen() {
   
   // Effect to inject custom CSS for web
   useEffect(() => {
-    if (Platform.OS === 'web') {
-      // Create and inject a style element
-      const styleElement = document.createElement('style');
-      styleElement.textContent = videoStyles;
-      document.head.appendChild(styleElement);
-      
-      // Cleanup on unmount
-      return () => {
-        document.head.removeChild(styleElement);
-      };
+    if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      try {
+        // Create and inject a style element
+        const styleElement = document.createElement('style');
+        styleElement.textContent = videoStyles;
+        document.head.appendChild(styleElement);
+
+        // Cleanup on unmount
+        return () => {
+          try {
+            document.head.removeChild(styleElement);
+          } catch (err) {
+            console.warn('Failed to remove style element:', err);
+          }
+        };
+      } catch (err) {
+        console.error('Failed to inject video styles:', err);
+      }
     }
   }, []);
   
   // Effect to handle web video element creation
   useEffect(() => {
-    if (Platform.OS === 'web' && videoContainerRef.current && video) {
-      // Clear previous content
-      const container = videoContainerRef.current as HTMLDivElement;
-      container.innerHTML = '';
-      
-      // Create and configure video element
-      const videoElement = document.createElement('video');
-      videoElement.id = 'climb-coach-video-player';
-      videoElement.src = video.videoUrl;
-      videoElement.controls = true;
-      videoElement.playsInline = true;
-      videoElement.style.width = '100%';
-      videoElement.style.height = '100%';
-      videoElement.style.objectFit = 'contain';
-      videoElement.style.transform = 'rotate(0deg)';
-      
-      // Prevent the hover issue by explicitly handling mouse events
-      videoElement.addEventListener('mouseenter', (e) => {
-        e.preventDefault();
+    if (Platform.OS === 'web' && typeof document !== 'undefined' && videoContainerRef.current && video) {
+      try {
+        // Clear previous content
+        const container = videoContainerRef.current as HTMLDivElement;
+        if (!container) {
+          console.warn('Video container ref is not available');
+          return;
+        }
+        container.innerHTML = '';
+
+        // Create and configure video element
+        const videoElement = document.createElement('video');
+        videoElement.id = 'climb-coach-video-player';
+        videoElement.src = video.videoUrl;
+        videoElement.controls = true;
+        videoElement.playsInline = true;
+        videoElement.style.width = '100%';
+        videoElement.style.height = '100%';
+        videoElement.style.objectFit = 'contain';
         videoElement.style.transform = 'rotate(0deg)';
-      });
-      
-      // Add to container
-      container.appendChild(videoElement);
+
+        // Prevent the hover issue by explicitly handling mouse events
+        videoElement.addEventListener('mouseenter', (e) => {
+          e.preventDefault();
+          videoElement.style.transform = 'rotate(0deg)';
+        });
+
+        // Add to container
+        container.appendChild(videoElement);
+      } catch (err) {
+        console.error('Failed to create video element:', err);
+      }
     }
   }, [video, videoContainerRef.current]);
 
