@@ -4,7 +4,7 @@ import * as FileSystem from 'expo-file-system';
 import { Upload } from 'tus-js-client';
 import { Platform } from 'react-native';
 import { UPLOAD_CONFIG } from '../config/upload';
-import logger from './utils/logger';
+import logger from '../utils/logger';
 
 logger.dev('API Base URL:', api.defaults.baseURL || 'Not set');
 logger.dev('API Timeout:', api.defaults.timeout || 'Default');
