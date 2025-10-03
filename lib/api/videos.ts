@@ -4,15 +4,10 @@ import * as FileSystem from 'expo-file-system';
 import { Upload } from 'tus-js-client';
 import { Platform } from 'react-native';
 import { UPLOAD_CONFIG } from '../config/upload';
+import logger from './utils/logger';
 
-const debugLog = (...args: unknown[]) => {
-    if (__DEV__) {
-        console.log(...args);
-    }
-};
-
-debugLog('🔧 API Base URL:', api.defaults.baseURL || 'Not set');
-debugLog('🔧 API Timeout:', api.defaults.timeout || 'Default');
+logger.dev('API Base URL:', api.defaults.baseURL || 'Not set');
+logger.dev('API Timeout:', api.defaults.timeout || 'Default');
 
 const EXTENSION_TO_MIME: Record<string, string> = {
     mp4: 'video/mp4',
@@ -93,7 +88,7 @@ export interface UploadResult {
  * @returns Promise with array of user videos
  */
 export const getUserVideos = async (): Promise<UserVideo[]> => {
-    debugLog('🔧 API Call Info:', {
+    logger.dev('API Call Info:', {
         baseURL: api.defaults.baseURL,
         method: 'GET',
         endpoint: '/api/videos'
@@ -101,12 +96,12 @@ export const getUserVideos = async (): Promise<UserVideo[]> => {
     try {
         const response = await api.get('/api/videos');
         if (response.status === 200 && response.data.videos) {
-            debugLog(`Loaded ${response.data.videos.length} videos`);
+            logger.dev(`Loaded ${response.data.videos.length} videos`);
             return response.data.videos;
         }
         return [];
     } catch (error) {
-        console.error('Failed to fetch videos:', error);
+        logger.error('Failed to fetch videos:', error);
         return [];
     }
 };
@@ -117,7 +112,7 @@ export const getUserVideos = async (): Promise<UserVideo[]> => {
  * @returns Promise with video details
  */
 export const getVideo = async (videoId: string): Promise<VideoDetails | null> => {
-    debugLog('🔧 API Call Info:', {
+    logger.dev('API Call Info:', {
         baseURL: api.defaults.baseURL,
         method: 'GET',
         endpoint: `/api/videos/${videoId}`
@@ -133,7 +128,7 @@ export const getVideo = async (videoId: string): Promise<VideoDetails | null> =>
         }
         return null;
     } catch (error) {
-        console.error('Failed to fetch video:', error);
+        logger.error('Failed to fetch video:', error);
         return null;
     }
 };
@@ -150,7 +145,7 @@ export const uploadVideo = async (
     try {
         return await uploadVideoDirectToSupabase({ videoUri, onProgress });
     } catch (error: any) {
-        console.error('Upload Error:', error);
+        logger.error('Upload Error:', error);
         let errorMessage = 'Error uploading video';
 
         if (error?.response) {
@@ -398,7 +393,7 @@ export const checkVideoProcessingStatus = async (videoId: string): Promise<{
             insightsCount: 0
         };
     } catch (error) {
-        console.error('Error checking video processing status:', error);
+        logger.error('Error checking video processing status:', error);
         return {
             status: 'unknown',
             hasInsights: false,
@@ -414,7 +409,7 @@ export const checkVideoProcessingStatus = async (videoId: string): Promise<{
  * @returns Promise that resolves when update is complete
  */
 export const updateVideoMetadata = async (
-    videoId: string, 
+    videoId: string,
     metadata: { title?: string; location?: string; description?: string }
 ): Promise<boolean> => {
     try {
@@ -423,22 +418,22 @@ export const updateVideoMetadata = async (
             ...(metadata.location !== undefined && { location: metadata.location.trim() || null }),
             ...(metadata.description !== undefined && { description: metadata.description.trim() || null })
         };
-        
+
         // Attempt to update metadata
         await api.patch(`/api/videos/${videoId}`, cleanMetadata);
         return true;
     } catch (error) {
-        console.error('Failed to update video metadata:', error);
-        
+        logger.error('Failed to update video metadata:', error);
+
         // Implement retry logic
         try {
-            debugLog('🔄 Retrying metadata update...');
+            logger.dev('Retrying metadata update...');
             await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
             await api.patch(`/api/videos/${videoId}`, metadata);
-            debugLog('✅ Metadata update retry successful');
+            logger.dev('Metadata update retry successful');
             return true;
         } catch (retryError) {
-            console.error('❌ Metadata update retry failed:', retryError);
+            logger.error('Metadata update retry failed:', retryError);
             return false;
         }
     }

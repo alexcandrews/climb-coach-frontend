@@ -9,12 +9,7 @@ import { useSession } from '../../lib/useSession';
 import { APP_TEXT_STYLES } from '../../constants/Typography';
 import LogoHeader from '../../components/LogoHeader';
 import { Ionicons } from '@expo/vector-icons';
-
-const debugLog = (...args: unknown[]) => {
-    if (__DEV__) {
-        console.log(...args);
-    }
-};
+import logger from '../../lib/utils/logger';
 
 interface VideoItem {
     id: string;
@@ -56,14 +51,14 @@ export default function HistoryScreen() {
             setError(null);
             
             if (!session?.access_token) {
-                console.error('❌ No access token available');
+                logger.error('No access token available');
                 setError('Not authenticated. Please sign in.');
                 setLoading(false);
                 return;
             }
-            
-            debugLog('📡 Fetching videos from:', `${API_CONFIG.BASE_URL}/api/videos`);
-            debugLog('🔑 Using access token:', session.access_token.substring(0, 10) + '...');
+
+            logger.dev('Fetching videos from:', `${API_CONFIG.BASE_URL}/api/videos`);
+            logger.dev('Using access token:', session.access_token.substring(0, 10) + '...');
             
             const response = await fetch(`${API_CONFIG.BASE_URL}/api/videos`, {
                 method: 'GET',
@@ -76,25 +71,25 @@ export default function HistoryScreen() {
             
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error('🚫 API Error:', response.status, errorText);
+                logger.error('API Error:', response.status, errorText);
                 throw new Error(`Failed to fetch videos: ${response.status} ${response.statusText}`);
             }
-            
+
             const data = await response.json();
-            debugLog('📦 Video data received:', JSON.stringify(data, null, 2));
-            
+            logger.dev('Video data received:', JSON.stringify(data, null, 2));
+
             if (!data.videos) {
-                console.warn('⚠️ No videos array in response:', data);
+                logger.warn('No videos array in response:', data);
             }
-            
+
             // Log each video to check if 'name' field exists
             if (data.videos && data.videos.length > 0) {
-                debugLog('📹 First video details:', data.videos[0]);
+                logger.dev('First video details:', data.videos[0]);
             }
-            
+
             setVideos(data.videos || []);
         } catch (err) {
-            console.error('❌ Error fetching videos:', err);
+            logger.error('Error fetching videos:', err);
             setError(err instanceof Error ? err.message : 'Failed to load videos');
         } finally {
             setLoading(false);
@@ -113,7 +108,7 @@ export default function HistoryScreen() {
 
     useEffect(() => {
         if (videos.length > 0) {
-            debugLog('First video structure:', videos[0]);
+            logger.dev('First video structure:', videos[0]);
         }
     }, [videos]);
 
@@ -135,14 +130,14 @@ export default function HistoryScreen() {
     const fetchVideoInsights = async (videoId: string) => {
         try {
             setInsightsLoading(true);
-            
+
             if (!session?.access_token) {
-                console.error('❌ No access token available');
+                logger.error('No access token available');
                 return;
             }
-            
-            debugLog(`📡 Fetching insights for video ${videoId}`);
-            
+
+            logger.dev(`Fetching insights for video ${videoId}`);
+
             const response = await fetch(`${API_CONFIG.BASE_URL}/api/videos/${videoId}/insights`, {
                 method: 'GET',
                 headers: {
@@ -151,18 +146,18 @@ export default function HistoryScreen() {
                 },
                 credentials: 'include'
             });
-            
+
             if (!response.ok) {
                 throw new Error(`Failed to fetch insights: ${response.status} ${response.statusText}`);
             }
-            
+
             const data = await response.json();
-            debugLog('📊 Insights data received:', JSON.stringify(data, null, 2));
-            
+            logger.dev('Insights data received:', JSON.stringify(data, null, 2));
+
             setSelectedVideoInsights(data);
             setInsightsModalVisible(true);
         } catch (err) {
-            console.error('❌ Error fetching insights:', err);
+            logger.error('Error fetching insights:', err);
             alert('Failed to load insights: ' + (err instanceof Error ? err.message : 'Unknown error'));
         } finally {
             setInsightsLoading(false);

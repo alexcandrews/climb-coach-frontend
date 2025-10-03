@@ -2,21 +2,16 @@ import { createClient } from "@supabase/supabase-js";
 import * as SecureStore from "expo-secure-store";
 import Constants from "expo-constants";
 import { Platform } from "react-native";
+import logger from "./utils/logger";
 
 const SUPABASE_URL = Constants.expoConfig?.extra?.SUPABASE_URL?.trim();
 const SUPABASE_ANON_KEY = Constants.expoConfig?.extra?.SUPABASE_ANON_KEY?.trim();
 
-const debugLog = (...args: unknown[]) => {
-    if (__DEV__) {
-        console.log(...args);
-    }
-};
-
-debugLog("🔍 Supabase URL =", JSON.stringify(SUPABASE_URL));
-debugLog("🔍 Supabase Key Status =", SUPABASE_ANON_KEY ? "Loaded ✅" : "Not Loaded ❌");
+logger.dev('Supabase URL:', SUPABASE_URL);
+logger.dev('Supabase Key Status:', SUPABASE_ANON_KEY ? 'Loaded' : 'Not Loaded');
 
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    throw new Error("❌ Supabase URL and API key are required.");
+    throw new Error("Supabase URL and API key are required.");
 }
 
 // Custom storage adapter for Supabase that uses platform-specific secure storage
@@ -63,29 +58,29 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     }
 });
 
-// 🚪 Logout user
+// Logout user
 export async function logoutUser() {
     try {
         const { error } = await supabase.auth.signOut();
         if (error) throw error;
         return true;
     } catch (error) {
-        console.error('Logout error:', error);
+        logger.error('Logout error:', error);
         throw error;
     }
 }
 
-// 🧑‍💼 Get user profile
+// Get user profile
 export async function getUserProfile() {
     try {
         // Get current user ID
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
-            console.error('No authenticated user found when getting profile');
+            logger.error('No authenticated user found when getting profile');
             return { error: 'Not authenticated' };
         }
 
-        debugLog('Getting profile for user:', user.id);
+        logger.dev('Getting profile for user:', user.id);
 
         const { data, error } = await supabase
             .from('profiles')
@@ -94,13 +89,13 @@ export async function getUserProfile() {
             .maybeSingle();
 
         if (error) {
-            console.error('Error fetching profile:', error);
+            logger.error('Error fetching profile:', error);
             return { error };
         }
 
         // If no profile exists, create a default one
         if (!data) {
-            debugLog('Creating default profile for user:', user.id);
+            logger.dev('Creating default profile for user:', user.id);
 
             const defaultProfile = {
                 id: user.id,
@@ -120,28 +115,28 @@ export async function getUserProfile() {
                 .select();
 
             if (createError) {
-                console.error('Error creating default profile:', createError);
+                logger.error('Error creating default profile:', createError);
                 return { error: createError };
             }
 
             if (!newProfile || newProfile.length === 0) {
-                console.error('No data returned after creating default profile');
+                logger.error('No data returned after creating default profile');
                 return { error: 'Failed to create default profile' };
             }
 
-            debugLog('Default profile created:', newProfile[0]);
+            logger.dev('Default profile created:', newProfile[0]);
             return { data: newProfile[0] };
         }
 
-        debugLog('Profile retrieved:', data);
+        logger.dev('Profile retrieved:', data);
         return { data };
     } catch (error) {
-        console.error('Unexpected error getting profile:', error);
+        logger.error('Unexpected error getting profile:', error);
         return { error: error instanceof Error ? error.message : 'Unknown error occurred' };
     }
 }
 
-// 📝 Update user profile
+// Update user profile
 export async function updateUserProfile(profileData: {
     name?: string;
     years_climbing?: number;
@@ -153,11 +148,11 @@ export async function updateUserProfile(profileData: {
         // Get current user ID
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
-            console.error('No authenticated user found');
+            logger.error('No authenticated user found');
             return { error: 'Not authenticated' };
         }
 
-        debugLog('Updating profile for user:', user.id, 'with data:', profileData);
+        logger.dev('Updating profile for user:', user.id, 'with data:', profileData);
 
         // Use update instead of upsert
         const { data, error } = await supabase
@@ -170,12 +165,12 @@ export async function updateUserProfile(profileData: {
             .select();
 
         if (error) {
-            console.error('Error updating profile:', error);
+            logger.error('Error updating profile:', error);
             return { error };
         }
 
         if (!data || data.length === 0) {
-            console.error('No data returned from profile update');
+            logger.error('No data returned from profile update');
 
             // Try to get the profile first to see if it exists
             const { data: existingProfile, error: getError } = await supabase
@@ -185,7 +180,7 @@ export async function updateUserProfile(profileData: {
                 .single();
 
             if (getError || !existingProfile) {
-                debugLog('Profile doesn\'t exist yet. Creating new profile...');
+                logger.dev('Profile doesn\'t exist yet. Creating new profile...');
 
                 // Create a new profile with insert
                 const { data: newProfile, error: insertError } = await supabase
@@ -203,7 +198,7 @@ export async function updateUserProfile(profileData: {
                     .select();
 
                 if (insertError) {
-                    console.error('Error creating new profile:', insertError);
+                    logger.error('Error creating new profile:', insertError);
                     return { error: insertError };
                 }
 
@@ -211,32 +206,32 @@ export async function updateUserProfile(profileData: {
                     return { error: 'Failed to create new profile' };
                 }
 
-                debugLog('Created new profile:', newProfile[0]);
+                logger.dev('Created new profile:', newProfile[0]);
                 return { data: newProfile[0] };
             }
 
             return { error: 'Failed to update profile - no data returned' };
         }
 
-        debugLog('Profile updated successfully:', data[0]);
+        logger.dev('Profile updated successfully:', data[0]);
         return { data: data[0] };
     } catch (error) {
-        console.error('Unexpected error updating profile:', error);
+        logger.error('Unexpected error updating profile:', error);
         return { error: error instanceof Error ? error.message : 'Unknown error occurred' };
     }
 }
 
-// 🐞 Debug profile update
+// Debug profile update
 export async function debugProfileUpdate() {
     try {
         // 1. Check if user is authenticated
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
-            console.error('No authenticated user found');
+            logger.error('No authenticated user found');
             return { status: 'error', message: 'Not authenticated' };
         }
 
-        debugLog('Debug: User authenticated:', { id: user.id, email: user.email });
+        logger.dev('Debug: User authenticated:', { id: user.id, email: user.email });
 
         // 2. Try to get profile
         const { data: getProfile, error: getError } = await supabase
@@ -245,14 +240,14 @@ export async function debugProfileUpdate() {
             .eq('id', user.id)
             .single();
 
-        debugLog('GET Profile result:', { data: getProfile, error: getError });
+        logger.dev('GET Profile result:', { data: getProfile, error: getError });
 
         // 3. Test with PATCH approach (update + eq)
         const testData = {
             name: 'Test Update via PATCH ' + new Date().toISOString().substring(0, 19)
         };
 
-        debugLog('Attempting PATCH update with:', testData);
+        logger.dev('Attempting PATCH update with:', testData);
 
         const { data: updateResult, error: updateError } = await supabase
             .from('profiles')
@@ -260,10 +255,10 @@ export async function debugProfileUpdate() {
             .eq('id', user.id)
             .select();
 
-        debugLog('UPDATE Profile result (PATCH):', { data: updateResult, error: updateError });
+        logger.dev('UPDATE Profile result (PATCH):', { data: updateResult, error: updateError });
 
         // 4. Try upsert as a fallback (this might fail due to RLS)
-        debugLog('Attempting upsert with:', { ...testData, id: user.id, name: 'Test Update via UPSERT' });
+        logger.dev('Attempting upsert with:', { ...testData, id: user.id, name: 'Test Update via UPSERT' });
 
         const { data: upsertResult, error: upsertError } = await supabase
             .from('profiles')
@@ -274,7 +269,7 @@ export async function debugProfileUpdate() {
             })
             .select();
 
-        debugLog('UPDATE Profile result (UPSERT):', { data: upsertResult, error: upsertError });
+        logger.dev('UPDATE Profile result (UPSERT):', { data: upsertResult, error: upsertError });
 
         return {
             status: 'complete',
@@ -284,7 +279,7 @@ export async function debugProfileUpdate() {
             updateUpsert: { data: upsertResult, error: upsertError }
         };
     } catch (error) {
-        console.error('Error in debug function:', error);
+        logger.error('Error in debug function:', error);
         return { status: 'error', message: error instanceof Error ? error.message : String(error) };
     }
 }

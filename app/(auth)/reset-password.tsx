@@ -4,12 +4,7 @@ import { useRouter } from 'expo-router';
 import supabase from '../../lib/supabase';
 import Colors from '../../constants/Colors';
 import LogoHeader from '@/components/LogoHeader';
-
-const debugLog = (...args: unknown[]) => {
-  if (__DEV__) {
-    console.log(...args);
-  }
-};
+import logger from '../../lib/utils/logger';
 
 function getTokensFromHash() {
   if (typeof window === 'undefined' || !window.location) return { access_token: '', refresh_token: '' };
@@ -21,7 +16,7 @@ function getTokensFromHash() {
       refresh_token: params.get('refresh_token') || '',
     };
   } catch (err) {
-    console.error('Failed to parse tokens from URL hash:', err);
+    logger.error('Failed to parse tokens from URL hash:', err);
     return { access_token: '', refresh_token: '' };
   }
 }
@@ -48,7 +43,7 @@ export default function ResetPasswordScreen() {
         const { data, error } = await supabase.auth.setSession({ access_token, refresh_token });
         debugLog('[ResetPassword] setSession result:', { data, error });
         if (error) {
-          console.error('[ResetPassword] setSession error:', error);
+          logger.error('[ResetPassword] setSession error:', error);
           setErrorMessage('Invalid or expired reset link. Please request a new one.');
           setLoading(false);
           return;
@@ -56,7 +51,7 @@ export default function ResetPasswordScreen() {
         session = data.session;
       } else {
         // No access token or refresh token in URL
-        console.warn('[ResetPassword] Missing access token or refresh token in URL');
+        logger.warn('[ResetPassword] Missing access token or refresh token in URL');
         setErrorMessage('Invalid or expired reset link. Please request a new one.');
         setLoading(false);
         return;
@@ -66,7 +61,7 @@ export default function ResetPasswordScreen() {
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         debugLog('[ResetPassword] getSession result:', currentSession);
         if (!currentSession) {
-          console.error('[ResetPassword] No session after setSession');
+          logger.error('[ResetPassword] No session after setSession');
           setErrorMessage('Invalid or expired reset link. Please request a new one.');
           setLoading(false);
           return;
@@ -94,7 +89,7 @@ export default function ResetPasswordScreen() {
     const { error } = await supabase.auth.updateUser({ password });
     setLoading(false);
     if (error) {
-      console.error('[ResetPassword] updateUser error:', error);
+      logger.error('[ResetPassword] updateUser error:', error);
       setErrorMessage('Failed to reset password. Please try again.');
       return;
     }

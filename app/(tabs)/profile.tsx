@@ -10,12 +10,7 @@ import BorderRadius from '@/constants/BorderRadius';
 import Shadows from '@/constants/Shadows';
 import LogoHeader from '@/components/LogoHeader';
 import { APP_TEXT_STYLES } from '@/constants/Typography';
-
-const debugLog = (...args: unknown[]) => {
-    if (__DEV__) {
-        console.log(...args);
-    }
-};
+import logger from '@/lib/utils/logger';
 
 const SKILL_LEVELS = ['Beginner', 'Intermediate', 'Advanced', 'Expert'];
 const CLIMBING_STYLES = [
@@ -55,23 +50,23 @@ export default function ProfileScreen() {
                 // Load profile data
                 const { data: profile, error } = await getUserProfile();
                 if (error) {
-                    console.error('Error loading profile:', error);
+                    logger.error('Error loading profile:', error);
                     Alert.alert('Error', 'Failed to load profile data. Using default values instead.');
                     return;
                 }
-                
+
                 if (profile) {
-                    debugLog('Loaded profile:', profile);
+                    logger.dev('Loaded profile:', profile);
                     setName(profile.name || user?.email?.split('@')[0] || '');
                     setYearsClimbing(profile.years_climbing || 0);
                     setPrimaryGoals(profile.primary_goals || 'Improve technique');
                     setSkillLevel(profile.skill_level || 'Beginner');
                     setClimbingStyles(profile.climbing_styles || ['Indoor Bouldering']);
                 } else {
-                    debugLog('No profile found, using defaults');
+                    logger.dev('No profile found, using defaults');
                 }
             } catch (error) {
-                console.error('Error loading user data:', error);
+                logger.error('Error loading user data:', error);
                 Alert.alert('Error', 'Failed to load profile data. Using default values instead.');
             } finally {
                 setIsLoading(false);
@@ -92,7 +87,7 @@ export default function ProfileScreen() {
             await logoutUser();
             router.replace('/login');
         } catch (error) {
-            console.error('Error signing out:', error);
+            logger.error('Error signing out:', error);
             Alert.alert('Error', 'Failed to sign out. Please try again.');
         }
     };
@@ -135,15 +130,15 @@ export default function ProfileScreen() {
                 });
                 
                 if (error) {
-                    console.error('Profile update error details:', error);
+                    logger.error('Profile update error details:', error);
                     throw new Error(typeof error === 'string' ? error : error.message || 'Unknown error');
                 }
-                
-                debugLog('Profile updated successfully:', data);
+
+                logger.dev('Profile updated successfully:', data);
                 // Success message
                 Alert.alert('Success', 'Profile updated successfully');
             } catch (error) {
-                console.error('Error updating profile:', error);
+                logger.error('Error updating profile:', error);
                 Alert.alert('Error', `Failed to update profile: ${error instanceof Error ? error.message : 'Unknown error'}`);
             } finally {
                 setIsSaving(false);
