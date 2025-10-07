@@ -3,6 +3,7 @@
   "compilerOptions": {
     "strict": true,
     "jsx": "react-native",
+    "skipLibCheck": true,
     "paths": {
       "@/*": [
         "./*"
@@ -10,7 +11,8 @@
     },
     "types": [
       "nativewind/types",
-      "jest"
+      "jest",
+      "@testing-library/react-native"
     ]
   },
   "include": [
