@@ -27,12 +27,18 @@ module.exports = [
       'lib/api/generated/**',
       'components/__tests__/StyledText-test.js',
       'navigation/**',
+      'jest.setup.ts',
     ],
   },
 
-  // Base config for all TypeScript files
+  // Base config for all TypeScript files (excluding tests)
   {
     files: ['**/*.ts', '**/*.tsx'],
+    ignores: [
+      '**/__tests__/**',
+      '**/*.test.ts',
+      '**/*.test.tsx',
+    ],
     languageOptions: {
       parser: tsparser,
       parserOptions: {
@@ -140,6 +146,15 @@ module.exports = [
       '**/*.test.tsx',
     ],
     languageOptions: {
+      parser: tsparser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+        ecmaFeatures: {
+          jsx: true,
+        },
+        // Don't use project for test files - they're excluded from tsconfig
+      },
       globals: {
         jest: 'readonly',
         describe: 'readonly',
@@ -151,10 +166,15 @@ module.exports = [
         beforeAll: 'readonly',
         afterAll: 'readonly',
         React: 'readonly',
+        global: 'readonly',
+        Platform: 'readonly',
+        Blob: 'readonly',
+        File: 'readonly',
       },
     },
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-var-requires': 'off',
     },
   },
 ];
