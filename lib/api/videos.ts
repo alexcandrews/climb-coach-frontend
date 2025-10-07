@@ -33,6 +33,12 @@ const inferMimeTypeFromUri = (uri?: string, fallback: string = 'video/mp4'): str
 
 const inferOriginalFilename = (uri?: string): string | undefined => {
     if (!uri) {return undefined;}
+
+    // Skip blob URLs - they don't contain meaningful filenames
+    if (uri.startsWith('blob:')) {
+        return undefined;
+    }
+
     const sanitized = uri.split('?')[0];
     const segments = sanitized.split('/');
     const last = segments.pop();
@@ -40,6 +46,15 @@ const inferOriginalFilename = (uri?: string): string | undefined => {
     if (last.startsWith('cache-') || last.includes('expo-file-system')) {
         return undefined;
     }
+
+    // Truncate very long filenames to 200 chars (leaving room for extension)
+    if (last.length > 200) {
+        const parts = last.split('.');
+        const ext = parts.length > 1 ? parts.pop() : '';
+        const name = parts.join('.');
+        return ext ? `${name.substring(0, 200 - ext.length - 1)}.${ext}` : name.substring(0, 200);
+    }
+
     return last;
 };
 
@@ -146,12 +161,29 @@ export const uploadVideo = async (
         return await uploadVideoDirectToSupabase({ videoUri, onProgress });
     } catch (error: any) {
         logger.error('Upload Error:', error);
+
+        // Log detailed error information for debugging
+        if (error?.response) {
+            logger.error('Response status:', error.response.status);
+            logger.error('Response data:', JSON.stringify(error.response.data, null, 2));
+            logger.error('Response headers:', error.response.headers);
+        }
+
         let errorMessage = 'Error uploading video';
 
         if (error?.response) {
             const data = error.response.data;
-            errorMessage = data?.error || data?.details || data?.message ||
-                `Server error: ${error.response.status}`;
+
+            // If validation error, show detailed field errors
+            if (data?.error === 'Validation Error' && data?.details) {
+                const fieldErrors = Object.entries(data.details)
+                    .map(([field, msg]) => `${field}: ${msg}`)
+                    .join(', ');
+                errorMessage = `Validation Error: ${fieldErrors}`;
+            } else {
+                errorMessage = data?.error || data?.details || data?.message ||
+                    `Server error: ${error.response.status}`;
+            }
         } else if (error?.request) {
             errorMessage = 'No response from server. Check your internet connection.';
         } else if (error instanceof Error) {

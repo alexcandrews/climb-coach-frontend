@@ -1,7 +1,18 @@
 /**
  * Upload configuration constants for the direct-to-storage flow.
+ *
+ * NOTE: MAX_FILE_SIZE must match the backend MAX_FILE_SIZE_MB environment variable.
+ * Default backend configuration is 50MB (Supabase free tier limit).
  */
 export const UPLOAD_CONFIG = {
+  /**
+   * Maximum file size in bytes (must match backend MAX_FILE_SIZE_MB).
+   * Default: 50MB (Supabase free tier limit)
+   * Pro tier: 5GB (5120MB)
+   */
+  MAX_FILE_SIZE: 50 * 1024 * 1024,
+  MAX_FILE_SIZE_MB: 50,
+
   /**
    * Threshold in bytes after which we fall back to resumable uploads (Supabase recommends 6 MB).
    */
